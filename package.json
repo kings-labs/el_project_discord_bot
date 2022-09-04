@@ -1,0 +1,22 @@
+{
+  "name": "el_project_bot_package",
+  "version": "1.0.0",
+  "description": "This Discord bot is used to automate business processes for Enlighten Learning",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kings-labs/el_project_discord_bot.git"
+  },
+  "author": "King's Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kings-labs/el_project_discord_bot/issues"
+  },
+  "homepage": "https://github.com/kings-labs/el_project_discord_bot#readme",
+  "dependencies": {
+    "discord.js": "^14.3.0"
+  }
+}
