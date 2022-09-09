@@ -1,6 +1,6 @@
 // Require the necessary discord.js classes
 const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, SelectMenuBuilder } = require('discord.js');
-const { token, channelID, guildID } = require('./config.json');
+const { token, mainChannelId, guildId } = require('./config.json');
 
 // Create a new client instance
 const client = new Client({ 
@@ -29,7 +29,7 @@ client.once('ready', () => {
  */
 function sendNewClientMessage(possibleDatesAndTimes, money, subject, level, frequency) {
 	// Get the channel to which it will send the annoucements
-	const channel = client.channels.cache.get(channelID);
+	const channel = client.channels.cache.get(mainChannelId);
 	// Create message object 
 	const msgEmbed = new EmbedBuilder()
 		.setColor(0x7289DA)
