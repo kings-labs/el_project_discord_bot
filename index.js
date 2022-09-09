@@ -4,10 +4,8 @@ const { token, channelID, guildID } = require('./config.json');
 
 // Create a new client instance
 const client = new Client({ 
-
 	intents: [
 		GatewayIntentBits.Guilds,
-		GatewayIntentBits.GuildMessages,
 	],
 });
 
@@ -21,7 +19,7 @@ client.once('ready', () => {
 });
 
 /**
- * Sends a message displaying new client to tutors discord channel when it is called.
+ * Sends a message displaying a new client annoucement to tutor's discord channel.
  * User has the possibility to select time slots via a button.
  * @param {Array} possibleDatesAndTimes 
  * @param {Integer} money 
@@ -30,7 +28,7 @@ client.once('ready', () => {
  * @param {Integer} frequency 
  */
 function sendNewClientMessage(possibleDatesAndTimes, money, subject, level, frequency) {
-	// Get the channel to which it will send the anoucements
+	// Get the channel to which it will send the annoucements
 	const channel = client.channels.cache.get(channelID);
 	// Create message object 
 	const msgEmbed = new EmbedBuilder()
@@ -60,7 +58,7 @@ client.on('interactionCreate', async interaction => {
 	// When date modal is submitted, run this code
 	if (interaction.customId === 'dateModal') {
 		// Get the data entered by the user
-		const dateSelected = interaction.fields.getTextInputValue('dateInput'); // This is where the answer is stored
+		const dateSelected = interaction.fields.getTextInputValue('dateInput'); // This is where the answer of the tutor is stored
 		await interaction.reply({ content: 'Your submission was received successfully!' });
 	}
 	
