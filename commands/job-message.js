@@ -23,27 +23,11 @@ module.exports = {
 			.setTitle('New Job Announcement')
 			.setDescription('Subject: AP Computer Science A \nLevel: Highschool Senior \nHours per week: 5H \nPay per class: $10');
 
-		await interaction.reply({ content: '', ephemeral: true, embeds: [embed], components: [row] });
-    },
-    
-    // A listener for the user's response (if they click the button)
-    async listenForReply(client)
-    {
-        client.on('interactionCreate', interaction => {
-	
-            // Do not continue if the interaction isn't a button or isn't 'register_interest'
-            if (!interaction.isButton() || !(interaction.customId === 'register_interest')) return;
-            
-            // fetch the 'forms' command in the Collection and assign it to the variable chosenCommand
-            const chosenCommand = interaction.client.commands.get('forms');
-        
-            // call the command's .execute() method, and pass in the interaction variable as its argument.
-            try {
-                chosenCommand.execute(interaction);
-            } catch (error) {
-                console.error(error);
-                interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-            }
-        });
+        try {
+            await interaction.reply({ content: '', ephemeral: true, embeds: [embed], components: [row] });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
     }
 }

@@ -33,6 +33,8 @@ client.once('ready', () => {
 
 // A listener for user interactions which dictates how the bot handles slash command calls
 client.on('interactionCreate', async interaction => {
+
+	// Exit if the interaction isn't a chat input
 	if (!interaction.isChatInputCommand()) return;
 
 	// fetch the command in the Collection with that name and assign it to the variable chosenCommand
@@ -44,12 +46,47 @@ client.on('interactionCreate', async interaction => {
 	try {
 		// call the command's .execute() method, and pass in the interaction variable as its argument.
 		await chosenCommand.execute(interaction);
-		// give the client (bot) the ability to listen to that interaction's response.
-		await chosenCommand.listenForReply(client);
 	} catch (error) {
 		console.error(error);
 		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 	}
+});
+
+// This block of code has if else statements to handle all of the users' interactions with the bot
+client.on('interactionCreate', async interaction => 
+{
+	// Handle the submit form interaction for the '/forms' command
+	if (interaction.isModalSubmit() && interaction.customId === 'testModal') {
+
+		// Get and handle the data entered by the user
+		const name = interaction.fields.getTextInputValue('nameInput');
+		const aboutSelf = interaction.fields.getTextInputValue('aboutSelfInput');
+		console.log(`User: ${interaction.member.user.username} \nName: ${name} \nWhy apply: ${aboutSelf}`);
+
+		try {
+			// Show the user a confirmation message
+			await interaction.reply({ content: 'Your submission was received successfully!', ephemeral: true });
+		} catch (error) {
+			console.error(error);
+			await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		}
+	}	
+	
+	// Handle the register interest button for the '/job-message' command
+	else if (interaction.isButton() && interaction.customId === 'register_interest')	{
+
+		// fetch the 'forms' command in the Collection and assign it to the variable chosenCommand
+		const chosenCommand = interaction.client.commands.get('forms');
+
+		try {
+			// call the command's .execute() method, and pass in the interaction variable as its argument.
+			chosenCommand.execute(interaction);
+		} catch (error) {
+			console.error(error);
+			interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		}
+	}
+	
 });
 
 // Login to Discord with your client's token
