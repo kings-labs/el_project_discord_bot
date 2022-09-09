@@ -15,67 +15,53 @@ client.login(token);
 // When the client is ready, run this code (only once)
 client.once('ready', () => { 
 	console.log('Ready !');	
-	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM"], 10, "Maths", "GCSE", 2 );
+	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2 );
 });
 
 /**
  * Sends a message displaying a new client annoucement to tutor's discord channel.
  * User has the possibility to select time slots via a button.
- * @param {Array} possibleDatesAndTimes 
+ * @param {Array} availabilities 
  * @param {number} money 
  * @param {String} subject 
  * @param {String} level 
  * @param {number} frequency 
  */
-function sendNewClientMessage(possibleDatesAndTimes, money, subject, level, frequency) {
+function sendNewClientMessage(availabilities, money, subject, level, frequency) {
 	// Get the channel to which it will send the annoucements
 	const channel = client.channels.cache.get(mainChannelId);
 	// Create message object 
 	const msgEmbed = new EmbedBuilder()
 		.setColor(0x7289DA)
 		.setTitle('New Client Anouncement')
-		.setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Times per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${possibleDatesAndTimes.join(", ")}.`)
+		.setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Times per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${availabilities.join(", ")}.`)
 		.setTimestamp() 
 		.setFooter({ text: 'Please select the date and time that fits you best and we will get back to you on the next steps.', iconURL:'https://i.imgur.com/i1k870R.png'});
 
-	const arrayOfRows = [];
+	//Create a row object that will hold the select menu
+	const row = new ActionRowBuilder();
 
-	for (let i = 1; i <= frequency; i++ ) {
+	//Create Select Menu object
+	const menu = new SelectMenuBuilder()
+				.setCustomId("dateSelection")
+				.setPlaceholder('Please select date option')
+				.setMaxValues(frequency);
 
-		let row = new ActionRowBuilder();
-
-		const menu = new SelectMenuBuilder()
-					.setCustomId(i.toString())
-					.setPlaceholder('Please select date option ' + i.toString())
-			
-		possibleDatesAndTimes.forEach((val, index) => {
-			menu.addOptions(
-				{
-					"label": val,
-					value: index.toString()
-				}
-				)
+	//Loop through the availabilities' list and display every ability to tutor via select menu 
+	availabilities.forEach((val, index) => {
+		menu.addOptions(
+			{
+				"label": val,
+				value: index.toString()
 			}
 		)
+	});
 
-		row.addComponents(menu);
-
-		arrayOfRows.push(row);
-	}
-	
-	// Below is the block of code for the buttons option
-    // const row = new ActionRowBuilder();
-	// possibleDatesAndTimes.forEach((val, index) => {
-	// 	row.addComponents(
-	// 		new ButtonBuilder()
-	// 			.setCustomId(index.toString())
-	// 			.setLabel(val)
-	// 			.setStyle(ButtonStyle.Primary),
-	// 	);
-	// });
+	//Add menu to row
+	row.addComponents(menu);
 		
 	// Sends both objects to channel
-	channel.send({ embeds: [msgEmbed], components: arrayOfRows});
+	channel.send({ embeds: [msgEmbed], components: [row]});
 }
 
 
