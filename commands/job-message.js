@@ -8,7 +8,7 @@ module.exports = {
 		.setDescription('Shows users a mock job request'),
 
 	// The command's functionality
-	async execute(interaction) 
+	async execute(interaction, client) 
 	{
         const row = new ActionRowBuilder()
 			.addComponents(
