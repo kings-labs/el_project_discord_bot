@@ -52,7 +52,7 @@ function sendNewClientMessage(availabilities, money, subject, level, frequency) 
 		menu.addOptions(
 			{
 				"label": val,
-				value: index.toString()
+				value: val
 			}
 		)
 	});
@@ -65,13 +65,18 @@ function sendNewClientMessage(availabilities, money, subject, level, frequency) 
 }
 
 
-// When an interation takes place, run this code
-client.on('interactionCreate', async interaction => {
-	// Whenever time slot button clicked run this
-	if (interaction.customId === 'select_time_slot') {
-		//createDateModal(interaction); // Create the modal for the user to input his answer (form)
+// When an interaction takes place, run this code
+client.on('interactionCreate', interaction => {
+
+	if (interaction.customId === 'dateSelection') {
+		
+		const tutorId = interaction.user.id; // This is the tutor that submited the form
+		const answer = interaction.values; // This is his answer
+
+		interaction.reply({content: "Your request has been sent", ephemeral: true});
+
+		console.log({tutorId, answer});
+
 	}
-
-
 });
 
