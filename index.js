@@ -38,7 +38,7 @@ function sendNewClientMessage(possibleDatesAndTimes, money, subject, level, freq
 		.setTitle('New Client Anouncement')
 		.setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Times per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${possibleDatesAndTimes.join(", ")}.`)
 		.setTimestamp() 
-		.setFooter({ text: 'Please select the date and time that fits you best and we will get back to you on the next steps.'});
+		.setFooter({ text: 'Please select the date and time that fits you best and we will get back to you on the next steps.', iconURL:'https://i.imgur.com/i1k870R.png'});
 	// Create button object
 	const row = new ActionRowBuilder()
 		.addComponents(
