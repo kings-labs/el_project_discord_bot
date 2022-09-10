@@ -4,6 +4,7 @@
   "description": "This Discord bot is used to automate business processes for Enlighten Learning",
   "main": "index.js",
   "scripts": {
+    "nodemon": "nodemon ./index.js",
     "test": "node index.js"
   },
   "repository": {
@@ -17,6 +18,7 @@
   },
   "homepage": "https://github.com/kings-labs/el_project_discord_bot#readme",
   "dependencies": {
-    "discord.js": "^14.3.0"
+    "discord.js": "^14.3.0",
+    "nodemon": "^2.0.19"
   }
 }

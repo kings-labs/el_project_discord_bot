@@ -1,5 +1,5 @@
 // Require the necessary discord.js classes
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, SelectMenuBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, SelectMenuBuilder, InteractionResponseType } = require('discord.js');
 const { token, mainChannelId, guildId } = require('./config.json');
 
 // Create a new client instance
@@ -15,8 +15,11 @@ client.login(token);
 // When the client is ready, run this code (only once)
 client.once('ready', () => { 
 	console.log('Ready !');	
-	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2 );
+	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2, 60);
 });
+
+// Stores the number of classes pw; Need the variable in global scope to use it after.
+let globalFrequency = 0;
 
 /**
  * Sends a message displaying a new client annoucement to tutor's discord channel.
@@ -25,16 +28,20 @@ client.once('ready', () => {
  * @param {number} money 
  * @param {String} subject 
  * @param {String} level 
- * @param {number} frequency 
+ * @param {number} frequency
+ * @param {number} classDuration
  */
-function sendNewClientMessage(availabilities, money, subject, level, frequency) {
+function sendNewClientMessage(availabilities, money, subject, level, frequency, classDuration) {
+	// Pass the frequency for it to be in global scope
+	globalFrequency = frequency;
+
 	// Get the channel to which it will send the annoucements
 	const channel = client.channels.cache.get(mainChannelId);
 	// Create message object 
 	const msgEmbed = new EmbedBuilder()
 		.setColor(0x7289DA)
 		.setTitle('New Client Anouncement')
-		.setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Times per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${availabilities.join(", ")}.`)
+		.setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Class(es) per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${availabilities.join(", ")}\n**Class duration**: ${classDuration} minutes`)
 		.setTimestamp() 
 		.setFooter({ text: 'Please select the date and time that fits you best and we will get back to you on the next steps.', iconURL:'https://i.imgur.com/i1k870R.png'});
 
@@ -44,8 +51,8 @@ function sendNewClientMessage(availabilities, money, subject, level, frequency) 
 	//Create Select Menu object
 	const menu = new SelectMenuBuilder()
 				.setCustomId("dateSelection")
-				.setPlaceholder('Please select date option')
-				.setMaxValues(frequency);
+				.setPlaceholder(`Please select ${globalFrequency} date option(s)`)
+				.setMaxValues(frequency)
 
 	//Loop through the availabilities' list and display every ability to tutor via select menu 
 	availabilities.forEach((val, index) => {
@@ -59,24 +66,50 @@ function sendNewClientMessage(availabilities, money, subject, level, frequency) 
 
 	//Add menu to row
 	row.addComponents(menu);
-		
+
+	// Add submit button inside new row
+	const row2 = new ActionRowBuilder()
+		.addComponents( 
+			new ButtonBuilder()
+				.setCustomId('submitButton')
+				.setLabel('Submit request')
+				.setStyle(ButtonStyle.Primary));
+			
 	// Sends both objects to channel
-	channel.send({ embeds: [msgEmbed], components: [row]});
+	channel.send({ embeds: [msgEmbed], components: [row,row2]});
 }
 
+// Stores the submission status
+let answerSubmitted = false;
+// This is the id of the tutor that submited the form
+let answer = []; 
+// This is his answer
+let tutorId = undefined;
 
 // When an interaction takes place, run this code
-client.on('interactionCreate', interaction => {
+client.on('interactionCreate', async interaction => {
 
 	if (interaction.customId === 'dateSelection') {
-		
-		const tutorId = interaction.user.id; // This is the tutor that submited the form
-		const answer = interaction.values; // This is his answer
 
-		interaction.reply({content: "Your request has been sent", ephemeral: true});
+		tutorId = interaction.user.id; 
+		answer = interaction.values; 
+		await interaction.reply({content: "If you're done with your selection, please submit. You can still change your selection.", ephemeral: true})
 
-		console.log({tutorId, answer});
+	}
 
+	if (interaction.customId === 'submitButton') {
+
+		if (answer.length === 0 || answer.length !== globalFrequency) {
+			 await interaction.reply({content: `Your request hasn't been sent. Please make sure to select ${globalFrequency} dates.`, ephemeral: true});
+		}
+		else if (answerSubmitted) {
+			await interaction.reply({content: "You already submitted your request.", ephemeral: true});
+		}
+		else {
+			answerSubmitted = true;
+			await interaction.reply({content: "Your request has been sent", ephemeral: true});
+			console.log({tutorId, answer});
+		}
 	}
 });
 
