@@ -1,19 +1,26 @@
+/**
+ * This script shows users a form (modal) to complete.
+ * It is only for testing ticket 04, so should be removed later on.
+ */
+
 // Require the necessary discord.js classes
-const { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder } = require('discord.js');
+const { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 
 module.exports = {
-	// The command's name and description
-	data: new SlashCommandBuilder()
-		.setName('forms')
-		.setDescription('Shows users a form to complete'),
 
-	// The command's functionality
-	async execute(interaction) 
+	/**
+	 * Create a form (modal) and show it to users. The form has three text inputs:
+	 * 1- To take the user's full name
+	 * 2- To take more info about the user
+	 * 3- The class ID is saved hare to be included in the interaction to be passed on
+	 * !! The class ID section should not be edited by the user !!
+	 * 
+	 * @param {Interaction} interaction The user interaction object
+	 * @param {string} classId The unique ID of the class to make the action on
+	 */
+	async execute(interaction, classId) 
 	{
-		// DELETE THIS!!!!!!
-		const classId = "11223344";
-
-		// Create the modal
+		// Create the modal object
 		const modal = new ModalBuilder()
 			.setCustomId('testModal')
 			.setTitle('Customizable Form');
@@ -22,10 +29,11 @@ module.exports = {
 
 		// Create the text input component for taking the user's name
 		const nameInput = new TextInputBuilder()
+			// Used to retrieve interactions later
 			.setCustomId('nameInput')
 		    // The label is the prompt the user sees for this input
 			.setLabel("What's your full name?")
-			// set a placeholder string to prompt the user
+			// A placeholder string to prompt the user
 			.setPlaceholder('Ali Sirgue')
 		    // Short means only a single line of text
 			.setStyle(TextInputStyle.Short);
@@ -34,23 +42,22 @@ module.exports = {
 		const aboutSelfInput = new TextInputBuilder()
 			.setCustomId('aboutSelfInput')
 			.setLabel("Why do you want to take this job?")
-			// set a placeholder string to prompt the user
 			.setPlaceholder('I like teaching!')
 		    // Paragraph means multiple lines of text.
 			.setStyle(TextInputStyle.Paragraph);
 
-		// Create the text input component for taking more info about the user
+		// This text input holds the class ID, which the user shouldn't change
 		const classInfo = new TextInputBuilder()
 			.setCustomId('classInfo')
 			.setLabel(`Leave this as (${classId}) to run successfully`)
-			// set a placeholder string to prompt the user
 			.setPlaceholder(`Type ${classId}`)
+			// This is the default value that will be inputted
 			.setValue(classId)
 			.setStyle(TextInputStyle.Short);
 
 
 		// An action row only holds one text input,
-		// so you need one action row per text input.
+		// so one action row per text input is needed.
 		const firstActionRow = new ActionRowBuilder().addComponents(nameInput);
 		const secondActionRow = new ActionRowBuilder().addComponents(aboutSelfInput);
 		const thirdActionRow = new ActionRowBuilder().addComponents(classInfo);

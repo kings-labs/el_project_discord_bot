@@ -6,6 +6,7 @@
 // Require the necessary discord.js classes
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
+const forms = require("./forms");
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -31,6 +32,8 @@ client.once('ready', () => {
 	console.log('Ready!');
 });
 
+// ---- INTERACTION HANDLING ----
+
 // A listener for user interactions which dictates how the bot handles slash command calls
 client.on('interactionCreate', async interaction => {
 
@@ -55,28 +58,32 @@ client.on('interactionCreate', async interaction => {
 // This block of code has if else statements to handle all of the users' interactions with the bot
 client.on('interactionCreate', async interaction => 
 {
-	// Handle the submit form interaction for the '/forms' command
+	// Handle the submit form interaction for T04 testing
 	if (interaction.isModalSubmit() && interaction.customId === 'testModal') {
 		interestModalSubmission(interaction);
 	}	
 	
-	// Handle the register interest button for the '/job-message' command
-	else if (interaction.isButton() && interaction.customId === 'register_interest')	{
+	// Handle the select menu interaction (/job command) for T04 testing
+	else if (interaction.isSelectMenu() && interaction.customId === 'classSelect')	{
 		jobMessageInteraction(interaction);
 	}
 	
 });
 
 /**
- * Prompt the user to fill an interest form by calling another command '/forms'
+ * Handle the select menu interaction (/job command).
+ * Take the chosen class' class ID, then call the 'forms' script execute function 
+ * and pass it the class ID.
+ * 
+ * @param {Interaction} interaction The user interaction object
  */
 async function jobMessageInteraction(interaction)	{
-	// fetch the 'forms' command in the Collection and assign it to the variable chosenCommand
-	const chosenCommand = interaction.client.commands.get('forms');
+	// The chosen class' ID
+	const selectedClassId = interaction.values[0];
 
 	try {
-		// call the command's .execute() method, and pass in the interaction variable as its argument.
-		chosenCommand.execute(interaction);
+		// call the forms function which shows users a form (modal)
+		forms.execute(interaction, selectedClassId);
 	} catch (error) {
 		console.error(error);
 		interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
@@ -84,28 +91,42 @@ async function jobMessageInteraction(interaction)	{
 }
 
 /**
- * Handle interest form submission
+ * Handle the test modal submission (forms submission).
+ * Extract all of the data from the interaction, then make an
+ * HTTP POST request with the API.
+ * 
+ * The API part is now commented out because there's no route for
+ * this test function.
+ * 
+ * @param {Interaction} interaction The user interaction object
  */
 async function interestModalSubmission(interaction)	{
-	// Get and handle the data entered by the user
-	const name = interaction.fields.getTextInputValue('nameInput');
+	// Get the data entered by the user
+	const userName = interaction.fields.getTextInputValue('nameInput');
 	const aboutSelf = interaction.fields.getTextInputValue('aboutSelfInput');
-	const classId = interaction.fields.getTextInputValue('classInfo');
+	const selectedClassId = interaction.fields.getTextInputValue('classInfo');
 
-	// console.log("Here: ", interaction);
-	console.log(`User: ${interaction.member.user.username} \nName: ${name} \nWhy apply: ${aboutSelf} \nClass ID: ${classId}`);
+	// print the data. FOR TESTING ONLY
+	console.log(`User: ${interaction.user.id} \nName: ${userName} \nWhy apply: ${aboutSelf} \nClass ID: ${selectedClassId}\n`);
 	
+	// Holds the extracted data in JSON format (to be sent to the API)
+	const requestData = {
+		name: userName,
+		about: aboutSelf,
+		classId: selectedClassId
+	};
 	// const params = {
 	// 	headers : {'Content-Type': 'application/json'},
-	// 	body: {classId : "4232"},
+	// 	body: requestData,
 	// 	method: "POST"
 	// };
 
 	// fetch("url", params);
 
 	try {
-		// Show the user a confirmation message
-		await interaction.reply({ content: 'Your submission was received successfully!', ephemeral: true });
+		// Update the user's request into a confirmation message
+		const confirmationMessage = 'Your submission has been received successfully! \nYou will recieve an email about the status of your request when it is completed.';
+		await interaction.update({ content: confirmationMessage, embeds: [], components: [] , ephemeral: true });
 	} catch (error) {
 		console.error(error);
 		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
