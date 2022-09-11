@@ -79,36 +79,43 @@ function sendNewClientMessage(availabilities, money, subject, level, frequency, 
 	channel.send({ embeds: [msgEmbed], components: [row,row2]});
 }
 
-// Stores the submission status
-let answerSubmitted = false;
+
 // This is the id of the tutor that submited the form
 let answer = []; 
-// This is his answer
+//This is the id of the tuto that submitted 
 let tutorId = undefined;
+// This list contains all the tutors Id that submited the form
+let allTutors = [];
+// List containing all the submissions in the form of objects 
+let courseRequestAnswers = [];
 
 // When an interaction takes place, run this code
 client.on('interactionCreate', async interaction => {
 
+	// if interaction is the select menu, run this 
 	if (interaction.customId === 'dateSelection') {
-
-		tutorId = interaction.user.id; 
-		answer = interaction.values; 
+		answer = interaction.values;  // get the answer's value
 		await interaction.reply({content: "If you're done with your selection, please submit. You can still change your selection.", ephemeral: true})
-
 	}
 
+	// if interaction is the submit button, run this 
 	if (interaction.customId === 'submitButton') {
 
+		tutorId = interaction.user.id
+
+		courseRequestAnswers.push({tutorId, answer})
+
+		// if no dates have been selected or not the correct amount of dates have been selected
 		if (answer.length === 0 || answer.length !== globalFrequency) {
 			 await interaction.reply({content: `Your request hasn't been sent. Please make sure to select ${globalFrequency} dates.`, ephemeral: true});
 		}
-		else if (answerSubmitted) {
+		else if (allTutors.includes(interaction.user.id)) {
 			await interaction.reply({content: "You already submitted your request.", ephemeral: true});
 		}
 		else {
-			answerSubmitted = true;
 			await interaction.reply({content: "Your request has been sent", ephemeral: true});
-			console.log({tutorId, answer});
+			allTutors.push(tutorId);
+			console.log(courseRequestAnswers + "\n");
 		}
 	}
 });
