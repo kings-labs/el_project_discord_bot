@@ -1,6 +1,5 @@
 // Require the necessary discord.js classes
 const { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder } = require('discord.js');
-const { Modal, TextInputComponent, SelectMenuComponent } = require('discord-modals'); // The Modal class from discord-modals library
 
 module.exports = {
 	// The command's name and description
@@ -9,51 +8,59 @@ module.exports = {
 		.setDescription('Shows users a form to complete'),
 
 	// The command's functionality
-	async execute(interaction, client) 
+	async execute(interaction) 
 	{
-		const discordModals = require('discord-modals'); // Define the discord-modals package
+		// DELETE THIS!!!!!!
+		const classId = "11223344";
 
-		// discord-modals needs the client in order to interact with modals
-		discordModals(client); 
+		// Create the modal
+		const modal = new ModalBuilder()
+			.setCustomId('testModal')
+			.setTitle('Customizable Form');
 
-		const modal = new Modal() // We create a Modal
-		.setCustomId('testModal')
-		.setTitle('Customizable Form')
-		.addComponents(
-			new TextInputComponent() // We create a Text Input Component
-				.setCustomId('nameInput')
-				// The label is the prompt the user sees for this input
-				.setLabel("What's your full name?")
-				// set a placeholder string to prompt the user
-				.setPlaceholder('Ali Sirgue')
-				// Short means only a single line of text
-				.setStyle('SHORT')
-				// true if the user has to fill it
-				.setRequired(true),
+		// Add components to modal
 
-			// new SelectMenuComponent() // We create a Select Menu Component
-			// 	.setCustomId('timeSelect')
-			// 	.setPlaceholder('Select your preferred time/date for the first class')
-			// 	.addOptions(
-			// 		{
-			// 			label: 'option_one',
-			// 			description: 'Friday 3PM, September 22',
-			// 			value: 'Friday',
-			// 		},
-			// 		{
-			// 			label: 'option_two',
-			// 			description: 'Saturday 2PM, September 23',
-			// 			value: 'Saturday',
-			// 		},
-			// 	),
-		);
+		// Create the text input component for taking the user's name
+		const nameInput = new TextInputBuilder()
+			.setCustomId('nameInput')
+		    // The label is the prompt the user sees for this input
+			.setLabel("What's your full name?")
+			// set a placeholder string to prompt the user
+			.setPlaceholder('Ali Sirgue')
+		    // Short means only a single line of text
+			.setStyle(TextInputStyle.Short);
+
+		// Create the text input component for taking more info about the user
+		const aboutSelfInput = new TextInputBuilder()
+			.setCustomId('aboutSelfInput')
+			.setLabel("Why do you want to take this job?")
+			// set a placeholder string to prompt the user
+			.setPlaceholder('I like teaching!')
+		    // Paragraph means multiple lines of text.
+			.setStyle(TextInputStyle.Paragraph);
+
+		// Create the text input component for taking more info about the user
+		const classInfo = new TextInputBuilder()
+			.setCustomId('classInfo')
+			.setLabel(`Leave this as (${classId}) to run successfully`)
+			// set a placeholder string to prompt the user
+			.setPlaceholder(`Type ${classId}`)
+			.setValue(classId)
+			.setStyle(TextInputStyle.Short);
+
+
+		// An action row only holds one text input,
+		// so you need one action row per text input.
+		const firstActionRow = new ActionRowBuilder().addComponents(nameInput);
+		const secondActionRow = new ActionRowBuilder().addComponents(aboutSelfInput);
+		const thirdActionRow = new ActionRowBuilder().addComponents(classInfo);
+
+		// Add inputs to the modal
+		modal.addComponents(firstActionRow, secondActionRow, thirdActionRow);
 
 		try {
             // Show the modal to the user
-			discordModals.showModal(modal, {
-				client: client, // Client to show the Modal through the Discord API.
-				interaction: interaction, // Show the modal with interaction data.
-			});
+			await interaction.showModal(modal);
         } catch (error) {
             console.error(error);
             await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });

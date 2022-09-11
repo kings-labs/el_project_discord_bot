@@ -45,7 +45,7 @@ client.on('interactionCreate', async interaction => {
 
 	try {
 		// call the command's .execute() method, and pass in the interaction variable as its argument.
-		await chosenCommand.execute(interaction, client);
+		await chosenCommand.execute(interaction);
 	} catch (error) {
 		console.error(error);
 		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
@@ -57,12 +57,12 @@ client.on('interactionCreate', async interaction =>
 {
 	// Handle the submit form interaction for the '/forms' command
 	if (interaction.isModalSubmit() && interaction.customId === 'testModal') {
-		intersetModalSubmission();
+		interestModalSubmission(interaction);
 	}	
 	
 	// Handle the register interest button for the '/job-message' command
 	else if (interaction.isButton() && interaction.customId === 'register_interest')	{
-		jobMessageInteraction();
+		jobMessageInteraction(interaction);
 	}
 	
 });
@@ -70,13 +70,13 @@ client.on('interactionCreate', async interaction =>
 /**
  * Prompt the user to fill an interest form by calling another command '/forms'
  */
-async function jobMessageInteraction()	{
+async function jobMessageInteraction(interaction)	{
 	// fetch the 'forms' command in the Collection and assign it to the variable chosenCommand
 	const chosenCommand = interaction.client.commands.get('forms');
 
 	try {
 		// call the command's .execute() method, and pass in the interaction variable as its argument.
-		chosenCommand.execute(interaction, client);
+		chosenCommand.execute(interaction);
 	} catch (error) {
 		console.error(error);
 		interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
@@ -86,11 +86,22 @@ async function jobMessageInteraction()	{
 /**
  * Handle interest form submission
  */
-async function intersetModalSubmission()	{
+async function interestModalSubmission(interaction)	{
 	// Get and handle the data entered by the user
 	const name = interaction.fields.getTextInputValue('nameInput');
 	const aboutSelf = interaction.fields.getTextInputValue('aboutSelfInput');
-	console.log(`User: ${interaction.member.user.username} \nName: ${name} \nWhy apply: ${aboutSelf}`);
+	const classId = interaction.fields.getTextInputValue('classInfo');
+
+	// console.log("Here: ", interaction);
+	console.log(`User: ${interaction.member.user.username} \nName: ${name} \nWhy apply: ${aboutSelf} \nClass ID: ${classId}`);
+	
+	// const params = {
+	// 	headers : {'Content-Type': 'application/json'},
+	// 	body: {classId : "4232"},
+	// 	method: "POST"
+	// };
+
+	// fetch("url", params);
 
 	try {
 		// Show the user a confirmation message
