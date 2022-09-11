@@ -49,8 +49,8 @@ module.exports = {
 		// This text input holds the class ID, which the user shouldn't change
 		const classInfo = new TextInputBuilder()
 			.setCustomId('classInfo')
-			.setLabel(`Leave this as (${classId}) to run successfully`)
-			.setPlaceholder(`Type ${classId}`)
+			.setLabel(`Set as ${classId} unless instructed otherwise`)
+			.setPlaceholder(`Set as ${classId}`)
 			// This is the default value that will be inputted
 			.setValue(classId)
 			.setStyle(TextInputStyle.Short);

@@ -60,7 +60,7 @@ client.on('interactionCreate', async interaction =>
 {
 	// Handle the submit form interaction for T04 testing
 	if (interaction.isModalSubmit() && interaction.customId === 'testModal') {
-		interestModalSubmission(interaction);
+		testModalSubmission(interaction);
 	}	
 	
 	// Handle the select menu interaction (/job command) for T04 testing
@@ -100,7 +100,7 @@ async function jobMessageInteraction(interaction)	{
  * 
  * @param {Interaction} interaction The user interaction object
  */
-async function interestModalSubmission(interaction)	{
+async function testModalSubmission(interaction)	{
 	// Get the data entered by the user
 	const userName = interaction.fields.getTextInputValue('nameInput');
 	const aboutSelf = interaction.fields.getTextInputValue('aboutSelfInput');
