@@ -42,7 +42,19 @@ module.exports = {
 			.setTitle('Select a class')
 			.setDescription('Select the class which you wish to submit feedback for');
 
-		
+		// DELETE START
+		const params = {
+        	headers : {'Content-Type': 'application/json'},
+        	method: "GET"
+        };
+		const url = "http://localhost:8080/tutor_classes";
+
+        fetch(url)
+		.then(data=>{return data.json()})
+		.then(res=>{console.log(res) })
+		.catch(error=>console.log(error));
+	
+		// DELETE END
 
         try {
 			// Send the message to the user
