@@ -5,8 +5,9 @@
 
 // Require the necessary discord.js classes
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const { token, feedbackChannelId } = require('./config.json');
-const forms = require("./forms");
+const { token } = require('./config.json');
+const forms = require("./services/forms");
+const feedbackMessage = require("./services/feedback-message");
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -69,7 +70,7 @@ client.on('interactionCreate', async interaction =>
 	}
 
 	else if (interaction.isButton() && interaction.customId === 'startFeedback')	{
-		console.log("hi");
+		feedbackMessage.execute(interaction);
 	}
 	
 });
