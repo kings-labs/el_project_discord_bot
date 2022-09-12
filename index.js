@@ -5,7 +5,7 @@
 
 // Require the necessary discord.js classes
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const { token } = require('./config.json');
+const { token, feedbackChannelId } = require('./config.json');
 const forms = require("./forms");
 const fs = require('node:fs');
 const path = require('node:path');
@@ -66,6 +66,10 @@ client.on('interactionCreate', async interaction =>
 	// Handle the select menu interaction (/job command) for T04 testing
 	else if (interaction.isSelectMenu() && interaction.customId === 'classSelect')	{
 		jobMessageInteraction(interaction);
+	}
+
+	else if (interaction.isButton() && interaction.customId === 'startFeedback')	{
+		console.log("hi");
 	}
 	
 });
