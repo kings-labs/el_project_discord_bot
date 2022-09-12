@@ -7,7 +7,7 @@
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
 const forms = require("./services/forms");
-const feedbackMessage = require("./services/feedback-message");
+const feedbackRequest = require("./services/feedback-request");
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -70,8 +70,16 @@ client.on('interactionCreate', async interaction =>
 	}
 
 	else if (interaction.isButton() && interaction.customId === 'startFeedback')	{
-		feedbackMessage.execute(interaction);
+		feedbackRequest.sendFeedbackMessage(interaction);
 	}
+
+	else if (interaction.isSelectMenu() && interaction.customId === 'feedbackClassSelected')	{
+		feedbackRequest.showFeedbackForm(interaction);
+	}
+
+	else if(interaction.isModalSubmit() && interaction.customId === 'feedbackForm') {
+		feedbackRequest.feedbackFormSubmission(interaction);
+	}	
 	
 });
 
