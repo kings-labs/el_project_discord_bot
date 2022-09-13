@@ -16,10 +16,8 @@ client.login(token);
 client.once('ready', () => { 
 	console.log('Ready !');	
 	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2, 1);
+	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "CS", "Uni", 1, 2);
 });
-
-// Stores the number of classes pw; Need the variable in global scope to use it after.
-let globalFrequency = 0;
 
 /**
  * Sends a message displaying a new client annoucement to tutor's discord channel.
@@ -32,8 +30,6 @@ let globalFrequency = 0;
  * @param {number} classDuration
  */
 function sendNewClientMessage(availabilities, money, subject, level, frequency, classDuration) {
-	// Pass the frequency for it to be in global scope
-	globalFrequency = frequency;
 
 	// Get the channel to which it will send the annoucements
 	const channel = client.channels.cache.get(mainChannelId);
@@ -51,15 +47,16 @@ function sendNewClientMessage(availabilities, money, subject, level, frequency, 
 	//Create Select Menu object
 	const menu = new SelectMenuBuilder()
 				.setCustomId("dateSelection")
-				.setPlaceholder(`Please select ${globalFrequency} date option(s)`)
+				.setPlaceholder(`Please select ${frequency} date option(s)`)
+				.setMinValues(frequency)
 				.setMaxValues(frequency)
 
 	//Loop through the availabilities' list and display every ability to tutor via select menu 
-	availabilities.forEach((val, index) => {
+	availabilities.forEach((val) => {
 		menu.addOptions(
 			{
 				"label": val,
-				value: val
+				"value": val
 			}
 		)
 	});
@@ -105,18 +102,16 @@ client.on('interactionCreate', async interaction => {
 
 		courseRequestAnswers.push({tutorId, answer})
 
-		// if no dates have been selected or not the correct amount of dates have been selected
-		if (answer.length === 0 || answer.length !== globalFrequency) {
-			 await interaction.reply({content: `Your request hasn't been sent. Please make sure to select ${globalFrequency} dates.`, ephemeral: true});
-		}
-		else if (allTutors.includes(interaction.user.id)) {
+		if (allTutors.includes(interaction.user.id)) {
 			await interaction.reply({content: "You already submitted your request.", ephemeral: true});
 		}
 		else {
 			await interaction.reply({content: "Your request has been sent", ephemeral: true});
 			allTutors.push(tutorId);
-			console.log(courseRequestAnswers + "\n");
+			console.log(courseRequestAnswers);
 		}
 	}
 });
+
+// Problem: when 2 announcement are submitted, only one is saved (the latest)
 
