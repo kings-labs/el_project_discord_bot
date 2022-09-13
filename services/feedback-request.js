@@ -11,58 +11,54 @@ module.exports = {
 	 */
 	async sendFeedbackMessage(interaction) 
 	{
-		// The action row which will hold the select menu
-        const row = new ActionRowBuilder()
-			.addComponents(
-				// The select menu to choose a class
-				new SelectMenuBuilder()
-					// Used to retrieve interactions later
-					.setCustomId('feedbackClassSelected')
-					// A placeholder string to prompt the user
-					.setPlaceholder('Select the class')
-					// The options themselves
-					.addOptions(
-						{
-							label: 'Math GCSE',
-							description: 'On Thursday 3PM',
-							value: '11223344',
-						},
-						{
-							label: 'Computer Science A',
-							description: 'On Friday 2PM',
-							value: '55667788',
-						},
-					),
-		    );
+		// url of the API call to get this tutor's classes
+		const url = "http://localhost:8080/tutor_classes/:discord_username";
 
-		// The message is shown as an embed instead of a regular message because it looks nicer
-        const embed = new EmbedBuilder()
+		// An HTTP GET request
+        fetch(url)
+		.then(data=> {return data.json()})	// format the response
+		.then(async classes => 
+		{
+			const menu = new SelectMenuBuilder()
+				// Used to retrieve interactions later
+				.setCustomId('feedbackClassSelected')
+				// A placeholder string to prompt the user
+				.setPlaceholder('Select the class');
+
+			// Iterate through the array which holds the tutor's classes
+			classes.forEach(element => {
+				menu.addOptions(
+					{
+						label : element.name,
+						description: `Student: ${element.student} || Class date: ${element.date}`,
+						value : element.id
+					}
+				);
+			});
+
+			// The action row which will hold the select menu
+			const row = new ActionRowBuilder().addComponents(menu);
+
+			// The message is shown as an embed instead of a regular message because it looks nicer
+			const embed = new EmbedBuilder()
 			// The color of the embed
 			.setColor(0x1b541d)
 			.setTitle('Select a class')
 			.setDescription('Select the class which you wish to submit feedback for');
 
-		// DELETE START
-		const params = {
-        	headers : {'Content-Type': 'application/json'},
-        	method: "GET"
-        };
-		const url = "http://localhost:8080/tutor_classes";
-
-        fetch(url)
-		.then(data=>{return data.json()})
-		.then(res=>{console.log(res) })
-		.catch(error=>console.log(error));
-	
-		// DELETE END
-
-        try {
-			// Send the message to the user
-            await interaction.reply({ content: '', ephemeral: true, embeds: [embed], components: [row] });
-        } catch (error) {
-            console.error(error);
-            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-        }
+			try {
+				// Send the message to the user
+				await interaction.reply({ content: '', ephemeral: true, embeds: [embed], components: [row] });
+			} catch (error) {
+				console.error(error);
+				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+			}
+		})
+		// Handle server errors
+		.catch(error => {
+			console.log(error);
+			interaction.reply({ content: 'There was an error while communicating with the server!', ephemeral: true });
+		});
     },
 
     /**
@@ -134,45 +130,62 @@ module.exports = {
         // Get the data entered by the user
         const feedback = interaction.fields.getTextInputValue('feedback');
         const selectedClassId = interaction.fields.getTextInputValue('classId');
-
-        // print the data. FOR TESTING ONLY
-        console.log(`User: ${interaction.user.id} \nfeedback: ${feedback} \nClass ID: ${selectedClassId}\n`);
         
         // Holds the extracted data in JSON format (to be sent to the API)
         const requestData = {
-            note: feedback,
-            classId: selectedClassId
+            classId: selectedClassId,
+            note: feedback
         };
-        // const params = {
-        // 	headers : {'Content-Type': 'application/json'},
-        // 	body: requestData,
-        // 	method: "POST"
-        // };
+		const params = {
+			method: "POST",
+			body: JSON.stringify(requestData),
+        	headers : {'Content-Type': 'application/json'}
+        };
+		const url = "http://localhost:8080/feedback_creation";
 
-        // fetch("url", params);
-
-        try {
-			if (this.inTime())	{
+        fetch(url, params)
+		.then(res => {console.log("0"); return res.json()})
+    	.then(async json => {
+			console.log(json);
+			console.log("1");
+			try {
+				console.log("2");
 				// Update the user's request into a confirmation message
 				const confirmationMessage = 'Your submission has been received successfully! \nYou will recieve an email about the status of your request when it is completed.';
 				await interaction.update({ content: confirmationMessage, embeds: [], components: [] , ephemeral: true });
-			} else	{
-				// Update the user's request into a contact someone message
-				const lateMessage = 'Unable to send your submisson! \nThe time limit for filing a feedback for that class has elapsed. \nPlease contact Nish.';
-				await interaction.update({ content: lateMessage, embeds: [], components: [] , ephemeral: true });
+				
+			} catch (error) {
+				console.error(error);
+				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 			}
-            
-        } catch (error) {
-            console.error(error);
-            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-        }
+		})
+		// Handle server errors
+		.catch(error => {
+			console.log(error);
+			interaction.reply({ content: 'There was an error while communicating with the server!', ephemeral: true });
+		});
+
+        
     },
 
-	/**
-	 * 
-	 * @returns true if the class date started within 10 days or less, false if later
-	 */
-	inTime()	{
-		return true;
+	// DELETEEEEEEEEEEEE
+	testing()
+	{
+		// Holds the extracted data in JSON format (to be sent to the API)
+        const requestData = {
+            classId: "999999",
+            note: "I am a baddie"
+        };
+        const params = {
+			method: "POST",
+			body: JSON.stringify(requestData),
+        	headers : {'Content-Type': 'application/json'}
+        };
+		const url = "http://localhost:8080/feedback_creation";
+
+        fetch(url, params)
+		.then(res => res.json())
+		.then(json => console.log(json))
+		.catch(err => console.log(err));
 	}
 }
