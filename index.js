@@ -58,14 +58,17 @@ client.on('interactionCreate', async interaction => {
 // This block of code has if else statements to handle all of the users' interactions with the bot
 client.on('interactionCreate', async interaction => 
 {
+	// Handle clicking the start button for submitting a class feedback
 	if (interaction.isButton() && interaction.customId === 'startFeedback')	{
 		feedbackRequest.sendFeedbackMessage(interaction);
 	}
 
+	// Handle choosing the class for submitting a class feedback
 	else if (interaction.isSelectMenu() && interaction.customId === 'feedbackClassSelected')	{
 		feedbackRequest.showFeedbackForm(interaction);
 	}
 
+	// Handle submitting a class feedback form
 	else if(interaction.isModalSubmit() && interaction.customId === 'feedbackForm') {
 		feedbackRequest.feedbackFormSubmission(interaction);
 	}	

@@ -1,3 +1,9 @@
+/**
+ * This script contains all the necessary methods for the submitting
+ * a class feedback request by tutors. It operates in a specific channel
+ * in the discord server called 'complete-a-class'. 
+ */
+
 // Require the necessary discord.js classes
 const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
@@ -5,7 +11,9 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 module.exports = {
 	
 	/**
-	 * Send a message to the user with a select menu to choose a class.
+	 * Send a message to the user with a select-menu to choose the class
+	 * which they want to submit feedback for. It contains an HTTP GET
+	 * request to get the classes info via our API.
 	 * 
 	 * @param {Interaction} interaction The user interaction object
 	 */
@@ -19,13 +27,15 @@ module.exports = {
 		.then(data=> {return data.json()})	// format the response
 		.then(async classes => 
 		{
+			// The select menu object
 			const menu = new SelectMenuBuilder()
 				// Used to retrieve interactions later
 				.setCustomId('feedbackClassSelected')
 				// A placeholder string to prompt the user
 				.setPlaceholder('Select the class');
 
-			// Iterate through the array which holds the tutor's classes
+			// Iterate an array which holds all the tutor's classes
+			// and add them to the select-menu
 			classes.forEach(element => {
 				menu.addOptions(
 					{
@@ -36,7 +46,7 @@ module.exports = {
 				);
 			});
 
-			// The action row which will hold the select menu
+			// The action row which will hold the select-menu
 			const row = new ActionRowBuilder().addComponents(menu);
 
 			// The message is shown as an embed instead of a regular message because it looks nicer
@@ -62,16 +72,14 @@ module.exports = {
     },
 
     /**
-	 * Create a form (modal) and show it to users. The form has three text inputs:
-	 * 1- To take the user's full name
-	 * 2- To take more info about the user
-	 * 3- The class ID is saved hare to be included in the interaction to be passed on
-	 * !! The class ID section should not be edited by the user !!
+	 * Create a feedback form (modal) and show it to the user.
+	 * !! The class ID section should not be edited by the user
 	 * 
 	 * @param {Interaction} interaction The user interaction object
 	 */
 	async showFeedbackForm(interaction) 
 	{
+		// Retrieve the chosen class Id from the interaction
         const classId = interaction.values[0];
 
 		// Create the modal object
@@ -81,7 +89,7 @@ module.exports = {
 
 		// Add components to modal
 
-		// Create the text input component for taking more info about the user
+		// Create the feedback text input component
 		const feedback = new TextInputBuilder()
 			.setCustomId('feedback')
 			.setLabel("Leave feedback of the student's performance")
@@ -97,7 +105,6 @@ module.exports = {
 			// This is the default value that will be inputted
 			.setValue(classId)
 			.setStyle(TextInputStyle.Short);
-
 
 		// An action row only holds one text input,
 		// so one action row per text input is needed.
@@ -117,12 +124,9 @@ module.exports = {
 	},
 
     /**
-     * Handle the test modal submission (forms submission).
-     * Extract all of the data from the interaction, then make an
-     * HTTP POST request with the API.
-     * 
-     * The API part is now commented out because there's no route for
-     * this test function.
+     * Handle the feedback form submission.
+     * Extract the data (feedback & classId) from the interaction, then make an
+     * HTTP POST request via the API to send the request to the server.
      * 
      * @param {Interaction} interaction The user interaction object
      */
@@ -136,56 +140,44 @@ module.exports = {
             classId: selectedClassId,
             note: feedback
         };
+
+		// The parameters of the HTTP POST request
 		const params = {
 			method: "POST",
 			body: JSON.stringify(requestData),
         	headers : {'Content-Type': 'application/json'}
         };
+
+		// The API URL for submitting class feedback
 		const url = "http://localhost:8080/feedback_creation";
 
-        fetch(url, params)
-		.then(res => {console.log("0"); return res.json()})
-    	.then(async json => {
-			console.log(json);
-			console.log("1");
+		/**
+		 * A sub function to update the original message sent to the
+		 * user, either confirms if the request is sent or
+		 * shows that there was an error.
+		 * 
+		 * @param {interaction} interaction The user interaction object
+		 */
+		async function updateMessage(interaction)	{
 			try {
-				console.log("2");
 				// Update the user's request into a confirmation message
 				const confirmationMessage = 'Your submission has been received successfully! \nYou will recieve an email about the status of your request when it is completed.';
 				await interaction.update({ content: confirmationMessage, embeds: [], components: [] , ephemeral: true });
-				
 			} catch (error) {
 				console.error(error);
 				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 			}
-		})
+		}
+
+		// An HTTP POST request
+        fetch(url, params)
+		// Update the message if there was no server error
+		.then(updateMessage(interaction))
 		// Handle server errors
 		.catch(error => {
 			console.log(error);
 			interaction.reply({ content: 'There was an error while communicating with the server!', ephemeral: true });
 		});
-
         
     },
-
-	// DELETEEEEEEEEEEEE
-	testing()
-	{
-		// Holds the extracted data in JSON format (to be sent to the API)
-        const requestData = {
-            classId: "999999",
-            note: "I am a baddie"
-        };
-        const params = {
-			method: "POST",
-			body: JSON.stringify(requestData),
-        	headers : {'Content-Type': 'application/json'}
-        };
-		const url = "http://localhost:8080/feedback_creation";
-
-        fetch(url, params)
-		.then(res => res.json())
-		.then(json => console.log(json))
-		.catch(err => console.log(err));
-	}
 }
