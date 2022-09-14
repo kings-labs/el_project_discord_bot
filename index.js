@@ -18,7 +18,7 @@ const client = new Client({
 client.once('ready', () => { 
 	console.log('Ready !');	
 	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2, 1);
-	//sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "CS", "Uni", 1, 2);
+	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "CS", "Uni", 1, 2);
 });
 
 /**
