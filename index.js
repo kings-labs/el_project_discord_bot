@@ -9,6 +9,9 @@ const { token, mainChannelId } = require('./config.json');
 const forms = require("./forms");
 const fs = require('node:fs');
 const path = require('node:path');
+const fetch = (...args) => import('node-fetch').then(({
+    default: fetch
+}) => fetch(...args)); // node-fetch import
 
 
 // Import dependecies to work with CSV
@@ -38,11 +41,33 @@ for (const file of commandFiles) {
 }
 
 // When the client is ready, run this code (only once)
-client.once('ready', () => { 
+client.once('ready', async () => { 
 	console.log('Ready !');	
-	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2, 1);
-	//sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "CS", "Uni", 1, 2);
+	getCourseRequests();
+	// Executes the function getCourseRequests every 15 mins (=900,000 millisecs).
+	setInterval(() => getCourseRequests(), 900000);
 });
+
+/**
+ * Fetches all new course requests by making a GET HTTP request to the API.
+ * For each new course requests, sends a new client announcement to the discord channel.
+ */
+function getCourseRequests() {
+	// GET HTTP request
+	fetch( "http://localhost:8080/new_course_requests")
+            .then(response => response.json()) 
+            .then(data => {
+				//console.log(data); //Uncomment if you want to test
+
+				let arrayOfCourseRequests = data.result;
+
+				arrayOfCourseRequests.forEach(courseRequest => {
+					// the course request table in the db still lacks the "availabilities","money" and "classDuration" attributes.
+					sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM", "ABC", "EFG", "HIJK"], 10, courseRequest.Subject, courseRequest.Level, courseRequest.Frequency, 1)
+				});
+			})
+}
+
 
 
 /**
@@ -51,7 +76,7 @@ client.once('ready', () => {
  * @param {Array} availabilities 
  * @param {number} money 
  * @param {String} subject 
- * @param {String} level 
+ * @param {number} level 
  * @param {number} frequency
  * @param {number} classDuration
  */
@@ -75,7 +100,7 @@ function sendNewClientMessage(availabilities, money, subject, level, frequency, 
 				.setCustomId("dateSelection")
 				.setPlaceholder(`Please select ${frequency} date option(s)`)
 				.setMinValues(frequency)
-				.setMaxValues(frequency)
+				.setMaxValues(frequency);
 
 	//Loop through the availabilities' list and display every ability to tutor via select menu 
 	availabilities.forEach((val) => {
