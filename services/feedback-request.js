@@ -1,11 +1,12 @@
 /**
  * This script contains all the necessary methods for the submitting
  * a class feedback request by tutors. It operates in a specific channel
- * in the discord server called 'complete-a-class'. 
+ * in the discord server called 'leave-a-feedback'. 
  */
 
 // Require the necessary discord.js classes
-const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { feedbackChannelId } = require('../config.json');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 
 module.exports = {
@@ -66,7 +67,7 @@ module.exports = {
 		})
 		// Handle server errors
 		.catch(error => {
-			console.log(error);
+			console.error(error);
 			interaction.reply({ content: 'There was an error while communicating with the server!', ephemeral: true });
 		});
     },
@@ -100,7 +101,7 @@ module.exports = {
 		// This text input holds the class ID, which the user shouldn't change
 		const classInfo = new TextInputBuilder()
 			.setCustomId('classId')
-			.setLabel(`Set as ${classId} unless instructed otherwise`)
+			.setLabel(`Leave as ${classId} unless instructed otherwise`)
 			.setPlaceholder(`Set as ${classId}`)
 			// This is the default value that will be inputted
 			.setValue(classId)
@@ -172,12 +173,51 @@ module.exports = {
 		// An HTTP POST request
         fetch(url, params)
 		// Update the message if there was no server error
-		.then(updateMessage(interaction))
+		.then(res => {
+			if (200 === res.status)	{
+				updateMessage(interaction);
+			}
+		})
 		// Handle server errors
-		.catch(error => {
-			console.log(error);
-			interaction.reply({ content: 'There was an error while communicating with the server!', ephemeral: true });
+		.catch(async error => {
+			console.error(error);
+			// Catch the error resulting from trying to reply to an already replied to interaction
+			try {
+				await interaction.reply({ content: 'There was an error while communicating with the server!', ephemeral: true });
+			} catch (interactionRepliedError) {
+				console.error(interactionRepliedError);
+			}
 		});
-        
     },
+
+	/**
+	 * Create the message in the feedback channel which starts the
+	 * submitting feedback process.
+	 * IT SHOULD ONLY BE SENT ONCE!
+	 * 
+	 * @param {Client} client 
+	 */
+	createInitialMessage(client)	{
+		// Get the feedback channel to which it will send the message
+		const feedbackChannel = client.channels.cache.get(feedbackChannelId);
+
+		// Create the message as an embed because it looks nicer than a regular message 
+		const msgEmbed = new EmbedBuilder()
+		.setColor(0xffcc1f)
+		.setTitle('Submit feedback for a class')
+		.setDescription(`**Click on the button below to start**`);
+
+		// The action row which holds the button
+		const row = new ActionRowBuilder()
+			.addComponents(
+				new ButtonBuilder()
+					.setCustomId('startFeedback')
+					.setLabel('HERE')
+					.setStyle(ButtonStyle.Success),
+			);
+
+		// Send the message to the feedback channel
+		feedbackChannel.send({ embeds: [msgEmbed], components: [row]});
+	}
+
 }
