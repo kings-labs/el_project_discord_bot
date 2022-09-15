@@ -78,6 +78,7 @@ function sendNewClientMessage(announcementId, availabilities, money, subject, le
 	channel.send({ embeds: [msgEmbed], components: [row,row2]});
 }
 
+let clientAnnouncementId2 = undefined;
 
 client.on('interactionCreate', async interaction => {
 	
@@ -90,10 +91,9 @@ client.on('interactionCreate', async interaction => {
 		const clientAnnouncementId = interaction.values[0].split(",")[0];
 	
 		// Checks if the tutor has already an answer stored inside then CVS
-		// If tutorAlreadyMadeSelectionOfSameClientAnnouncement()
 		if (tutorAlreadyMadeSelectionOfSameClientAnnouncement(interaction.user.id, clientAnnouncementId, answers)) {
 			// Option: Please make sur to submit your other answer before selecting this one.
-			deleteTutorInitialAnswer(interaction.user.id, clientAnnouncementId, answers); // deletes his initial answer
+			deleteTutorAnswer(interaction.user.id, clientAnnouncementId, answers); // deletes his initial answer
 		} 
 		
 		// Extract from the answer only the dates and times that we store inside the array answer
@@ -108,7 +108,7 @@ client.on('interactionCreate', async interaction => {
 		//Writes the modifications in the CSV file 
 		fs.writeFileSync("answers.csv", new Parser({fields: ["announcementId", "tutorId", "selection"] }).parse(answers));
 
-		interaction.reply({ content: "If you're done with your selection, please submit. You can still change your selection.", ephemeral: true })
+		interaction.reply({ content: "If you're done with your selection, please submit. You can still change your selection.", ephemeral: true });
 	}
 
 
@@ -117,7 +117,7 @@ client.on('interactionCreate', async interaction => {
 		// POST request to API is created with tutorId and selection under tutorDemand route
 
 		// Delete the appropriate line in the CSV and write the new CSV state
-		fs.writeFileSync("answers.csv", new Parser({fields: ["tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
+		fs.writeFileSync("answers.csv", new Parser({fields: ["announcementId", "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, clientAnnouncementId2, answers)));
 
 		interaction.reply({content: "Your request has been sent.", ephemeral: true});
 	}
@@ -153,7 +153,7 @@ function tutorAlreadyMadeSelectionOfSameClientAnnouncement(tutorId, announcement
  * @param {Array} csvArray The array that contains the element we want to delete. 
  * @returns The updated version of the csv array.
  */
-function deleteTutorInitialAnswer(tutorId, announcementId, csvArray) {
+function deleteTutorAnswer(tutorId, announcementId, csvArray) {
 
 	let tutorAnswerObject = undefined;
 
@@ -167,7 +167,7 @@ function deleteTutorInitialAnswer(tutorId, announcementId, csvArray) {
 
 		return true;
 	});
-	
+
 	const indexOfElementToDelete = csvArray.indexOf(tutorAnswerObject); // Get the idex of the object to delete
 
 	if (indexOfElementToDelete > -1) { // only splice array when item is found
