@@ -63,7 +63,7 @@ function getCourseRequests() {
 
 				arrayOfCourseRequests.forEach(courseRequest => {
 					// the course request table in the db still lacks the "availabilities","money" and "classDuration" attributes.
-					sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM", "ABC", "EFG", "HIJK"], 10, courseRequest.Subject, courseRequest.Level, courseRequest.Frequency, 1)
+					// Change the parameters arrangement // sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM", "ABC", "EFG", "HIJK"], 10, courseRequest.Subject, courseRequest.Level, courseRequest.Frequency, 1)
 				});
 			})
 }
@@ -80,7 +80,7 @@ function getCourseRequests() {
  * @param {number} frequency
  * @param {number} classDuration
  */
-function sendNewClientMessage(availabilities, money, subject, level, frequency, classDuration) {
+function sendNewClientMessage(subject, frequency, level, money, classDuration, availabilities) {
 
 	// Get the channel to which it will send the annoucements
 	const channel = client.channels.cache.get(mainChannelId);
