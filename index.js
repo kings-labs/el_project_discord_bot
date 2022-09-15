@@ -17,8 +17,8 @@ const client = new Client({
 // When the client is ready, run this code (only once)
 client.once('ready', () => { 
 	console.log('Ready !');	
-	sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2, 1);
-	//sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "CS", "Uni", 1, 2);
+	sendNewClientMessage(1, ["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2, 1);
+	sendNewClientMessage(2, ["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "CS", "Uni", 1, 2);
 });
 
 /**
@@ -31,7 +31,7 @@ client.once('ready', () => {
  * @param {number} frequency
  * @param {number} classDuration
  */
-function sendNewClientMessage(availabilities, money, subject, level, frequency, classDuration) {
+function sendNewClientMessage(announcementId, availabilities, money, subject, level, frequency, classDuration) {
 
 	// Get the channel to which it will send the annoucements
 	const channel = client.channels.cache.get(mainChannelId);
@@ -54,11 +54,11 @@ function sendNewClientMessage(availabilities, money, subject, level, frequency, 
 				.setMaxValues(frequency)
 
 	//Loop through the availabilities' list and display every ability to tutor via select menu 
-	availabilities.forEach((val) => {
+	availabilities.forEach((dateAndTime) => {
 		menu.addOptions(
 			{
-				"label": val,
-				"value": val
+				"label": dateAndTime,
+				"value": `${announcementId},${dateAndTime}`
 			}
 		)
 	});
@@ -70,7 +70,7 @@ function sendNewClientMessage(availabilities, money, subject, level, frequency, 
 	const row2 = new ActionRowBuilder()
 		.addComponents( 
 			new ButtonBuilder()
-				.setCustomId('submitButton')
+				.setCustomId("submitButton")
 				.setLabel('Submit request')
 				.setStyle(ButtonStyle.Primary));
 			
@@ -87,15 +87,26 @@ client.on('interactionCreate', async interaction => {
 	if (interaction.customId === 'dateSelection') {
 		
 		// Checks if the tutor has already an answer stored inside then CVS
+		// If tutorAlreadyMadeSelectionOfSameClientAnnouncement()
 		if (tutorIdInCSV(interaction.user.id, answers)) {
 			// Option: Please make sur to submit your other answer before selecting this one.
 			deleteTutorAnswer(interaction.user.id, answers); // deletes his answer
 		} 
+
+		// Extract from the answer the announcement id
+		const clientAnnouncementId = interaction.values[0].split(",")[0];
+
+		// Extract from the answer only the dates and times that we store inside the array answer
+		let answer = [];
+		for (let i = 0; i < interaction.values.length; i++) {
+			answer.push(interaction.values[i].split(",")[1])	
+		}
+
 		// Pushes the latest answer 
-		answers.push({ tutorId: interaction.user.id, selection: interaction.values.toString() });
+		answers.push({ announcementId: clientAnnouncementId, tutorId: interaction.user.id, selection: answer.toString() });
 
 		//Writes the modifications in the CSV file 
-		fs.writeFileSync("answers.csv", new Parser({fields: ["tutorId", "selection"] }).parse(answers));
+		fs.writeFileSync("answers.csv", new Parser({fields: ["announcementId", "tutorId", "selection"] }).parse(answers));
 
 		interaction.reply({ content: "If you're done with your selection, please submit. You can still change your selection.", ephemeral: true })
 	}
@@ -131,6 +142,7 @@ function tutorIdInCSV(tutorId, csvArray) {
 			isFound = true;
 		}
 	});
+
 	return isFound;
 }
 /**
@@ -142,20 +154,24 @@ function tutorIdInCSV(tutorId, csvArray) {
  * @returns The updated version of the csv array.
  */
 function deleteTutorAnswer(tutorId, csvArray) {
+
 	let tutorAnswerObject = undefined;
 
 	// Find the object to delete and assign it to tutorAnswerObject variable
 	csvArray.every(answer => {
+
 		if (answer.tutorId == tutorId) {
 			tutorAnswerObject = answer;
-		 return false;
+		 	return false;
 		}
+
 		return true;
 	});
 
 	const indexOfElementToDelete = csvArray.indexOf(tutorAnswerObject); // Get the idex of the object to delete
+
 	if (indexOfElementToDelete > -1) { // only splice array when item is found
-	csvArray.splice(indexOfElementToDelete, 1); // 2nd parameter means remove one item only
+		csvArray.splice(indexOfElementToDelete, 1); // 2nd parameter means remove one item only
 	}
 
 	return csvArray;
