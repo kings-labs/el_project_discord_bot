@@ -83,19 +83,19 @@ client.on('interactionCreate', async interaction => {
 	
 	// The answers of all tutors that are stored inside the CSV in the form of an array
 	const answers = await csv().fromFile("answers.csv");
-	
+
 	if (interaction.customId === 'dateSelection') {
-		
-		// Checks if the tutor has already an answer stored inside then CVS
-		// If tutorAlreadyMadeSelectionOfSameClientAnnouncement()
-		if (tutorIdInCSV(interaction.user.id, answers)) {
-			// Option: Please make sur to submit your other answer before selecting this one.
-			deleteTutorAnswer(interaction.user.id, answers); // deletes his answer
-		} 
 
 		// Extract from the answer the announcement id
 		const clientAnnouncementId = interaction.values[0].split(",")[0];
-
+	
+		// Checks if the tutor has already an answer stored inside then CVS
+		// If tutorAlreadyMadeSelectionOfSameClientAnnouncement()
+		if (tutorAlreadyMadeSelectionOfSameClientAnnouncement(interaction.user.id, clientAnnouncementId, answers)) {
+			// Option: Please make sur to submit your other answer before selecting this one.
+			deleteTutorInitialAnswer(interaction.user.id, clientAnnouncementId, answers); // deletes his initial answer
+		} 
+		
 		// Extract from the answer only the dates and times that we store inside the array answer
 		let answer = [];
 		for (let i = 0; i < interaction.values.length; i++) {
@@ -131,14 +131,14 @@ client.on('interactionCreate', async interaction => {
  * @param {Array} csvArray The array that contains all the tutors' answers.
  * @returns true if the tutor has been found, false otherwise.
  */
-function tutorIdInCSV(tutorId, csvArray) {
+function tutorAlreadyMadeSelectionOfSameClientAnnouncement(tutorId, announcementId, csvArray) {
 
 	if (csvArray.length == 0) return false;
 
 	let isFound = false;
 
 	csvArray.forEach(answer => {
-		if (answer.tutorId == tutorId) {
+		if (answer.tutorId == tutorId && answer.announcementId == announcementId) {
 			isFound = true;
 		}
 	});
@@ -153,21 +153,21 @@ function tutorIdInCSV(tutorId, csvArray) {
  * @param {Array} csvArray The array that contains the element we want to delete. 
  * @returns The updated version of the csv array.
  */
-function deleteTutorAnswer(tutorId, csvArray) {
+function deleteTutorInitialAnswer(tutorId, announcementId, csvArray) {
 
 	let tutorAnswerObject = undefined;
 
 	// Find the object to delete and assign it to tutorAnswerObject variable
 	csvArray.every(answer => {
 
-		if (answer.tutorId == tutorId) {
+		if (answer.tutorId == tutorId && answer.announcementId == announcementId) {
 			tutorAnswerObject = answer;
 		 	return false;
 		}
 
 		return true;
 	});
-
+	
 	const indexOfElementToDelete = csvArray.indexOf(tutorAnswerObject); // Get the idex of the object to delete
 
 	if (indexOfElementToDelete > -1) { // only splice array when item is found
