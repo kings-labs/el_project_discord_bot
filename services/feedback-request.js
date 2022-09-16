@@ -6,7 +6,7 @@
 
 // Require the necessary discord.js classes
 const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { feedbackChannelId } = require('../config.json');
+const { feedbackChannelId, apiUrlPrefix } = require('../config.json');
 const updateMessage = require('./message-update');  // Contains useful methods to update the messages shown to users
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 
@@ -22,7 +22,7 @@ module.exports = {
 	async sendFeedbackMessage(interaction) 
 	{
 		// url of the API call to get this tutor's classes
-		const url = `http://localhost:8080/tutor_classes/${interaction.user.id}`;
+		const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
 
 
 		// An HTTP GET request
@@ -158,7 +158,7 @@ module.exports = {
         };
 
 		// The API URL for submitting class feedback
-		const url = "http://localhost:8080/feedback_creation";
+		const url = `${apiUrlPrefix}/feedback_creation`;
 
 		// An HTTP POST request
         fetch(url, params)

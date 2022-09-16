@@ -5,7 +5,7 @@
  * To learn more about Discord.js: https://discordjs.guide
  */
 
-// Require the necessary discord.js classes
+// Require the necessary files
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
 const feedbackRequest = require('./services/feedback-request');

@@ -6,7 +6,7 @@
 
 // Require the necessary discord.js classes
 const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle, APIApplicationCommandPermissionsConstant } = require('discord.js');
-const { cancellationChannelId } = require('../config.json');
+const { cancellationChannelId, apiUrlPrefix } = require('../config.json');
 const updateMessage = require('./message-update');  // Contains useful methods to update the messages shown to users
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 
@@ -22,8 +22,8 @@ module.exports = {
 	async sendCancellationMessage(interaction) 
 	{
 		// url of the API call to get this tutor's classes
-		// const url = `http://localhost:8080/tutor_classes/${interaction.user.id}`;
-		const url = `http://localhost:8080/tutor_classes/0123qwert`;    // FOR TESTING ONLY. DELETE BEFORE MERGING
+		// const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
+		const url = `${apiUrlPrefix}/tutor_classes/0123qwert`;    // FOR TESTING ONLY. DELETE BEFORE MERGING
 
 
 		// An HTTP GET request
@@ -159,7 +159,7 @@ module.exports = {
         };
 
 		// The API URL for submitting class feedback
-		const url = "http://localhost:8080/cancellation_request";
+		const url = `${apiUrlPrefix}/cancellation_request`;
 
 		// An HTTP POST request
         fetch(url, params)
