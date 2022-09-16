@@ -85,7 +85,6 @@ function sendNewClientMessage(announcementId, availabilities, money, subject, le
 	channel.send({ embeds: [msgEmbed], components: [row,row2]});
 }
 
-let clientAnnouncementId2 = undefined;
 
 client.on('interactionCreate', async interaction => {
 	
