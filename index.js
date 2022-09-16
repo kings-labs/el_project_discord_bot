@@ -1,6 +1,8 @@
 /**
  * This is the main script of the bot. Running it takes the bot online.
  * It needs to be constantly run for the bot to be always available.
+ * 
+ * To learn more about Discord.js: https://discordjs.guide
  */
 
 // Require the necessary discord.js classes
