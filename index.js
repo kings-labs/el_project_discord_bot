@@ -1,11 +1,19 @@
+/**
+ * This is the main script of the bot. Running it takes the bot online.
+ * It needs to be constantly run for the bot to be always available.
+ */
+
 // Require the necessary discord.js classes
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, SelectMenuBuilder, InteractionResponseType } = require('discord.js');
-const { token, mainChannelId, guildId } = require('./config.json');
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, Collection } = require('discord.js');
+const { token, mainChannelId } = require('./config.json');
+const feedbackRequest = require("./services/feedback-request");
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Import dependecies to work with CSV
-const fs = require("fs");
+const fsCsv = require("fs");
 const csv = require("csvtojson"); // To read the csv file 
-const { Parser } = require("json2csv"); // To write the csv file
+const { Parser } = require("json2csv"); // To write the 
 
 // Create a new client instance
 const client = new Client({ 
@@ -13,6 +21,20 @@ const client = new Client({
 		GatewayIntentBits.Guilds,
 	],
 });
+
+// Hold all of the slash commands of this client (empty now)
+client.commands = new Collection();
+const commandsPath = path.join(__dirname, 'commands');	// The path of the file storing the commands
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));	// Take only the javascript files
+
+// fill the client.commands collection with the slash commands
+for (const file of commandFiles) {
+	const filePath = path.join(commandsPath, file);
+	const command = require(filePath);
+	// Set a new item in the Collection
+	// With the key as the command name and the value as the exported module
+	client.commands.set(command.data.name, command);
+}
 
 // When the client is ready, run this code (only once)
 client.once('ready', () => { 
@@ -103,7 +125,7 @@ client.on('interactionCreate', async interaction => {
 			answers.push({ tutorId: interaction.user.id, selection: interaction.values.toString() });
 
 			//Writes the modifications in the CSV file 
-			fs.writeFileSync("answers.csv", new Parser({fields: ["tutorId", "selection"] }).parse(answers));
+			fsCsv.writeFileSync("answers.csv", new Parser({fields: ["tutorId", "selection"] }).parse(answers));
 
 			interaction.reply({ content: "If you're done with your selection, please submit. You can still change your selection.", ephemeral: true });
 		}
@@ -116,14 +138,14 @@ client.on('interactionCreate', async interaction => {
 		// POST request to API is created with tutorId and selection under tutorDemand route
 
 		// Delete the appropriate line in the CSV and write the new CSV state
-		fs.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
+		fsCsv.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
 
 		interaction.reply({content: "Your request has been sent.", ephemeral: true});
 	}
 
 	if (interaction.customId === 'cancelButton') {
 
-		fs.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
+		fsCsv.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
 
 		interaction.reply({content: "Your request has been successfully canceled.", ephemeral: true});
 
@@ -183,6 +205,50 @@ function deleteTutorAnswer(tutorId, csvArray) {
 
 	return csvArray;
 }
+
+// ---- INTERACTION HANDLING ----
+
+// A listener for user interactions which dictates how the bot handles slash command calls
+client.on('interactionCreate', async interaction => {
+
+	// Exit if the interaction isn't a chat command
+	if (!interaction.isChatInputCommand()) return;
+
+	// fetch the command in the Collection with that name and assign it to the variable chosenCommand
+	const chosenCommand = interaction.client.commands.get(interaction.commandName);
+
+	// exit early if the command doesn't exist
+	if (!chosenCommand) return;
+
+	try {
+		// call the command's .execute() method, and pass in the interaction variable as its argument.
+		await chosenCommand.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+	}
+});
+
+// This block of code has if else statements to handle all of the users' interactions with the bot
+client.on('interactionCreate', async interaction => 
+{
+	// Handle clicking the start button for submitting a class feedback
+	if (interaction.isButton() && interaction.customId === 'startFeedback')	{
+		feedbackRequest.sendFeedbackMessage(interaction);
+	}
+
+	// Handle choosing the class for submitting a class feedback
+	else if (interaction.isSelectMenu() && interaction.customId === 'feedbackClassSelected')	{
+		feedbackRequest.showFeedbackForm(interaction);
+	}
+
+	// Handle submitting a class feedback form
+	else if(interaction.isModalSubmit() && interaction.customId === 'feedbackForm') {
+		feedbackRequest.feedbackFormSubmission(interaction);
+	}	
+	
+});
+
 
 // Login to Discord with your client's token
 client.login(token);
