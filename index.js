@@ -57,13 +57,12 @@ function getCourseRequests() {
 	fetch( "http://localhost:8080/new_course_requests")
             .then(response => response.json()) 
             .then(data => {
-				//console.log(data); //Uncomment if you want to test
+				console.log(data); //Uncomment if you want to test
 
 				let arrayOfCourseRequests = data.result;
 
 				arrayOfCourseRequests.forEach(courseRequest => {
-					// the course request table in the db still lacks the "availabilities","money" and "classDuration" attributes.
-					// Change the parameters arrangement // sendNewClientMessage(["Monday 9AM", "Wednesday 2PM", "Thursday 6PM", "ABC", "EFG", "HIJK"], 10, courseRequest.Subject, courseRequest.Level, courseRequest.Frequency, 1)
+					sendNewClientMessage(courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.DateOptions);
 				});
 			})
 }
