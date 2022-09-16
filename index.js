@@ -6,7 +6,8 @@
 // Require the necessary discord.js classes
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
-const feedbackRequest = require("./services/feedback-request");
+const feedbackRequest = require('./services/feedback-request');
+const cancellationRequest = require('./services/cancellation-request');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -58,20 +59,41 @@ client.on('interactionCreate', async interaction => {
 // This block of code has if else statements to handle all of the users' interactions with the bot
 client.on('interactionCreate', async interaction => 
 {
-	// Handle clicking the start button for submitting a class feedback
-	if (interaction.isButton() && interaction.customId === 'startFeedback')	{
-		feedbackRequest.sendFeedbackMessage(interaction);
+	// Handle button interactions
+	if (interaction.isButton())	{
+		// Handle clicking the start button for submitting a class feedback
+		if (interaction.customId === 'startFeedback')	{
+			feedbackRequest.sendFeedbackMessage(interaction);
+		}
+		// Handle clicking the start button for requesting a class cancellation
+		else if (interaction.customId === 'startCancellation')	{
+			cancellationRequest.sendCancellationMessage(interaction);
+		}
 	}
 
-	// Handle choosing the class for submitting a class feedback
-	else if (interaction.isSelectMenu() && interaction.customId === 'feedbackClassSelected')	{
-		feedbackRequest.showFeedbackForm(interaction);
+	// Handle select-menu interactions
+	else if (interaction.isSelectMenu())	{
+		// Handle choosing the class for submitting a class feedback
+		if (interaction.customId === 'feedbackClassSelected')	{
+			feedbackRequest.showFeedbackForm(interaction);
+		}
+		// Handle choosing the class for requesting a class cancellation
+		else if (interaction.customId === 'cancellationClassSelected')	{
+			cancellationRequest.showCancellationForm(interaction);
+		}
 	}
 
-	// Handle submitting a class feedback form
-	else if(interaction.isModalSubmit() && interaction.customId === 'feedbackForm') {
-		feedbackRequest.feedbackFormSubmission(interaction);
-	}	
+	// Handle modal submission interactions
+	else if (interaction.isModalSubmit())	{
+		// Handle submitting a class feedback form
+		if (interaction.customId === 'feedbackForm') {
+			feedbackRequest.feedbackFormSubmission(interaction);
+		}
+		// Handle submitting a class cancellation request
+		else if (interaction.customId === 'cancellationForm')	{
+			cancellationRequest.cancellationFormSubmission(interaction);
+		}
+	}
 	
 });
 
