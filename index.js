@@ -10,6 +10,7 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
 const feedbackRequest = require('./services/feedback-request');
 const cancellationRequest = require('./services/cancellation-request');
+const reschedulingRequest = require('./services/rescheduling-request');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -71,6 +72,10 @@ client.on('interactionCreate', async interaction =>
 		else if (interaction.customId === 'startCancellation')	{
 			cancellationRequest.sendCancellationMessage(interaction);
 		}
+		// Handle clicking the start button for requesting a class rescheduling
+		else if (interaction.customId === 'startRescheduling')	{
+			reschedulingRequest.sendReschedulingMessage(interaction);
+		}
 	}
 
 	// Handle select-menu interactions
@@ -83,6 +88,10 @@ client.on('interactionCreate', async interaction =>
 		else if (interaction.customId === 'cancellationClassSelected')	{
 			cancellationRequest.showCancellationForm(interaction);
 		}
+		// Handle choosing the class for requesting a class rescheduling
+		else if (interaction.customId === 'reschedulingClassSelected')	{
+			reschedulingRequest.showReschedulingForm(interaction);
+		}
 	}
 
 	// Handle modal submission interactions
@@ -94,6 +103,10 @@ client.on('interactionCreate', async interaction =>
 		// Handle submitting a class cancellation request
 		else if (interaction.customId === 'cancellationForm')	{
 			cancellationRequest.cancellationFormSubmission(interaction);
+		}
+		// Handle submitting a class rescheduling request
+		else if (interaction.customId === 'reschedulingForm')	{
+			reschedulingRequest.reschedulingFormSubmission(interaction);
 		}
 	}
 	
