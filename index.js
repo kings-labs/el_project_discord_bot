@@ -117,7 +117,7 @@ client.on('interactionCreate', async interaction => {
 	
 		// Checks if the tutor has already an answer stored inside then CVS
 		if (tutorMadeASelection(interaction.user.id, answers)) {
-			interaction.reply({ content: "Please **submit** or **cancel** your first request to proceed.", ephemeral: true });
+			interaction.reply({ content: "You have registered answers to a previous announcement which you have not yet submitted or canceled. Please do so before attempting to register new one for this announcement.", ephemeral: true });
 		} 
 		else {
 			// Pushes the latest answer 
