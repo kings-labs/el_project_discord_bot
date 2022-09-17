@@ -1,12 +1,12 @@
 /**
- * This script contains all the necessary methods for the submitting
- * a class feedback request by tutors. It operates in a specific channel
- * in the discord server called 'leave-a-feedback'. 
+ * This script contains all the necessary methods for submitting
+ * a class cancellation request by tutors. It operates in a specific channel
+ * in the discord server called 'cancel-a-class'. 
  */
 
 // Require the necessary discord.js classes
-const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { feedbackChannelId, apiUrlPrefix } = require('../config.json');
+const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle, APIApplicationCommandPermissionsConstant } = require('discord.js');
+const { cancellationChannelId, apiUrlPrefix } = require('../config.json');
 const updateMessage = require('./message-update');  // Contains useful methods to update the messages shown to users
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 
@@ -14,15 +14,16 @@ module.exports = {
 	
 	/**
 	 * Send a message to the user with a select-menu to choose the class
-	 * which they want to submit feedback for. It contains an HTTP GET
+	 * which they want to cancel. It contains an HTTP GET
 	 * request to get the classes info via our API.
 	 * 
 	 * @param {Interaction} interaction The user interaction object
 	 */
-	async sendFeedbackMessage(interaction) 
+	async sendCancellationMessage(interaction) 
 	{
 		// url of the API call to get this tutor's classes
-		const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
+		// const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
+		const url = `${apiUrlPrefix}/tutor_classes/0123qwert`;    // FOR TESTING ONLY. DELETE BEFORE MERGING
 
 
 		// An HTTP GET request
@@ -30,7 +31,7 @@ module.exports = {
 		.then(data=> {return data.json()})	// format the response
 		.then(async classes => 
 		{
-			// Check if the tutor has any active classes
+            // Check if the tutor has any active classes
             if (0 === classes.length)   {
                 updateMessage.noAvailableClassesMessage(interaction);
                 return;
@@ -39,7 +40,7 @@ module.exports = {
 			// The select menu object
 			const menu = new SelectMenuBuilder()
 				// Used to retrieve interactions later
-				.setCustomId('feedbackClassSelected')
+				.setCustomId('cancellationClassSelected')
 				// A placeholder string to prompt the user
 				.setPlaceholder('Select the class');
 
@@ -61,9 +62,9 @@ module.exports = {
 			// The message is shown as an embed instead of a regular message because it looks nicer
 			const embed = new EmbedBuilder()
 			// The color of the embed
-			.setColor(0x1b541d)
+			.setColor(0xb00505)
 			.setTitle('Select a class')
-			.setDescription('Select the class which you wish to submit feedback for');
+			.setDescription('Select the class which you wish to cancel');
 
 			try {
 				// Send the message to the user
@@ -76,39 +77,39 @@ module.exports = {
 		// Handle server errors
 		.catch(error => {
 			console.error(error);
-			updateMessage.serverErrorMessage(interaction);
+            updateMessage.serverErrorMessage(interaction);
 		});
     },
 
     /**
-	 * Create a feedback form (modal) and show it to the user.
+	 * Create a cancellation form (modal) and show it to the user.
 	 * !! The class ID section should not be edited by the user
 	 * 
 	 * @param {Interaction} interaction The user interaction object
 	 */
-	async showFeedbackForm(interaction) 
+	async showCancellationForm(interaction) 
 	{
 		// Retrieve the chosen class Id from the interaction
         const classId = interaction.values[0];
 
 		// Create the modal object
 		const modal = new ModalBuilder()
-			.setCustomId('feedbackForm')
-			.setTitle('Class Feedback Form');
+			.setCustomId('cancellationForm')
+			.setTitle('Class Cancellation Form');
 
 		// Add components to modal
 
-		// Create the feedback text input component
+		// Create the cancellation reason input component
 		const feedback = new TextInputBuilder()
-			.setCustomId('feedback')
-			.setLabel("Leave feedback of the student's performance")
-			.setPlaceholder('The student is exceptional!')
+			.setCustomId('cancellationReason')
+			.setLabel("Why would you like to cancel this class?")
+			.setPlaceholder('Because I have final exams coming up!')
 		    // Paragraph means multiple lines of text.
 			.setStyle(TextInputStyle.Paragraph);
 
 		// This text input holds the class ID, which the user shouldn't change
 		const classInfo = new TextInputBuilder()
-			.setCustomId('feedbackClassId')
+			.setCustomId('cancellationClassId')
 			.setLabel(`Leave as ${classId} unless instructed otherwise`)
 			.setPlaceholder(`Set as ${classId}`)
 			// This is the default value that will be inputted
@@ -133,21 +134,21 @@ module.exports = {
 	},
 
     /**
-     * Handle the feedback form submission.
-     * Extract the data (feedback & classId) from the interaction, then make an
+     * Handle the cancellation form submission.
+     * Extract the data (reason & classId) from the interaction, then make an
      * HTTP POST request via the API to send the request to the server.
      * 
      * @param {Interaction} interaction The user interaction object
      */
-    async feedbackFormSubmission(interaction)	{
+    async cancellationFormSubmission(interaction)	{
         // Get the data entered by the user
-        const givenFeedback = interaction.fields.getTextInputValue('feedback');
-        const selectedClassId = interaction.fields.getTextInputValue('feedbackClassId');
+        const cancellationReason = interaction.fields.getTextInputValue('cancellationReason');
+        const selectedClassId = interaction.fields.getTextInputValue('cancellationClassId');
         
         // Holds the extracted data in JSON format (to be sent to the API)
         const requestData = {
             class_ID: selectedClassId,
-            feedback: givenFeedback
+            reason: cancellationReason
         };
 
 		// The parameters of the HTTP POST request
@@ -158,28 +159,29 @@ module.exports = {
         };
 
 		// The API URL for submitting class feedback
-		const url = `${apiUrlPrefix}/feedback_creation`;
+		const url = `${apiUrlPrefix}/cancellation_request`;
 
 		// An HTTP POST request
         fetch(url, params)
 		.then(res => {
 		    // Update the message if there isn't any error
 			if (200 === res.status)	{
+                console.log(`Tutor: ${interaction.user.id} \nClass: ${selectedClassId} \nReason: ${cancellationReason}\n`);   // FOR TESTING ONLY
 				updateMessage.confirmationMessage(interaction);
 			}
-			 // Update the message if the user entered an invalid class ID
-			 else if (412 === res.status)    {
+            // Update the message if the user entered an invalid class ID
+            else if (412 === res.status)    {
                 updateMessage.invalidClassIdMessage(interaction);
             }
             // Update the message if the user has already submitted a request
             else if (406 == res.status) {
+                console.log(`Tutor: ${interaction.user.id} \nClass: ${selectedClassId} \nReason: ${cancellationReason}\n`);   // FOR TESTING ONLY
                 updateMessage.pendingRequestMessage(interaction);
             }
 		})
 		// Handle server errors
 		.catch(async error => {
 			console.error(error);
-			// Catch the error resulting from trying to reply to an already replied to interaction
 			try {
 				updateMessage.serverErrorMessage(interaction);
 			} catch (interactionRepliedError) {
@@ -189,33 +191,33 @@ module.exports = {
     },
 
 	/**
-	 * Create the message in the feedback channel which starts the
-	 * submitting feedback process.
+	 * Create the message in the cancellation channel which starts the
+	 * requesting cancellation process.
 	 * IT SHOULD ONLY BE SENT ONCE!
 	 * 
 	 * @param {Client} client the bot's client object
 	 */
 	createInitialMessage(client)	{
-		// Get the feedback channel to which it will send the message
-		const feedbackChannel = client.channels.cache.get(feedbackChannelId);
+		// Get the cancellation channel to which it will send the message
+		const cancellationChannel = client.channels.cache.get(cancellationChannelId);
 
 		// Create the message as an embed because it looks nicer than a regular message 
 		const msgEmbed = new EmbedBuilder()
 		.setColor(0xffcc1f)
-		.setTitle('Submit feedback for a class')
+		.setTitle('Cancel a class')
 		.setDescription(`**Click on the button below to start**`);
 
 		// The action row which holds the button
 		const row = new ActionRowBuilder()
 			.addComponents(
 				new ButtonBuilder()
-					.setCustomId('startFeedback')
+					.setCustomId('startCancellation')
 					.setLabel('HERE')
 					.setStyle(ButtonStyle.Success),
 			);
 
-		// Send the message to the feedback channel
-		feedbackChannel.send({ embeds: [msgEmbed], components: [row]});
+		// Send the message to the cancellation channel
+		cancellationChannel.send({ embeds: [msgEmbed], components: [row]});
 	}
 
 }
