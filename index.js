@@ -116,8 +116,7 @@ client.on('interactionCreate', async interaction => {
 	if (interaction.customId === 'dateSelection') {
 	
 		// Checks if the tutor has already an answer stored inside then CVS
-		if (tutorAlreadyMadeASelection(interaction.user.id, answers)) {
-
+		if (tutorMadeASelection(interaction.user.id, answers)) {
 			interaction.reply({ content: "Please **submit** or **cancel** your first request to proceed.", ephemeral: true });
 		} 
 		else {
@@ -132,23 +131,33 @@ client.on('interactionCreate', async interaction => {
 		
 	}
 
-
 	if (interaction.customId === 'submitButton') {
 
-		// POST request to API is created with tutorId and selection under tutorDemand route
+		if (tutorMadeASelection(interaction.user.id, answers)) {
 
-		// Delete the appropriate line in the CSV and write the new CSV state
-		fsCsv.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
+			// POST request to API is created with tutorId and selection under tutorDemand route
 
-		interaction.reply({content: "Your request has been sent.", ephemeral: true});
+			interaction.reply({content: "Your request has been sent.", ephemeral: true});
+
+			// Delete the appropriate line in the CSV and write the new CSV state
+			fsCsv.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
+		}
+		else {
+			interaction.reply({content: "Please make sure to select your date options before submitting a request.", ephemeral: true});
+		}
 	}
 
 	if (interaction.customId === 'cancelButton') {
 
-		fsCsv.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
+		if (tutorMadeASelection(interaction.user.id, answers)) {
 
-		interaction.reply({content: "Your request has been successfully canceled.", ephemeral: true});
+			fsCsv.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
 
+			interaction.reply({content: "Your request has been successfully canceled.", ephemeral: true});
+		}
+		else {
+			interaction.reply({content: "You don't have any request in progress at the moment.", ephemeral: true});
+		}
 	}
 
 });
@@ -160,7 +169,7 @@ client.on('interactionCreate', async interaction => {
  * @param {Array} csvArray The array that contains all the tutors' answers.
  * @returns true if the tutor has been found, false otherwise.
  */
-function tutorAlreadyMadeASelection(tutorId, csvArray) {
+function tutorMadeASelection(tutorId, csvArray) {
 
 	if (csvArray.length == 0) return false;
 
