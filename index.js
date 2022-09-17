@@ -44,8 +44,8 @@ for (const file of commandFiles) {
 client.once('ready', async () => { 
 	console.log('Ready !');	
 	getCourseRequests();
-	// Executes the function getCourseRequests every 15 mins (=900,000 millisecs).
-	setInterval(() => getCourseRequests(), 900000);
+	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
+	setInterval(() => getCourseRequests(), 3600000);
 });
 
 /**
@@ -57,7 +57,7 @@ function getCourseRequests() {
 	fetch( "http://localhost:8080/new_course_requests")
             .then(response => response.json()) 
             .then(data => {
-				console.log(data); //Uncomment if you want to test
+				//console.log(data); //Uncomment if you want to test
 
 				let arrayOfCourseRequests = data.result;
 
