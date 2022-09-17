@@ -36,7 +36,7 @@ module.exports = {
         "06" : "June", "07" : "July", "08" : "August", "09" : "September", "10" : "October", "11" : "November",
         "12" : "December"};
         // Extract the day, month's name and year of the user chosen date
-        const extractedMonth = monthNumToText.newDate.split("/")[0];
+        const extractedMonth = monthNumToText[newDate.split("/")[0]];
         const extractedDay = newDate.split("/")[1];
         const extractedYear = newDate.split("/")[2];
 
@@ -57,7 +57,7 @@ module.exports = {
      */
     async invalidClassIdMessage(interaction)	{
         try {
-            const invalidClassIdMessage = 'Invalid class ID entered \nPlease do not change the class ID unless instructed otherwise.';
+            const invalidClassIdMessage = 'Invalid class ID entered! \nPlease do not change the class ID unless instructed otherwise.';
             await interaction.update({ content: invalidClassIdMessage, embeds: [], components: [] , ephemeral: true });
         } catch (error) {
             console.error(error);
@@ -74,7 +74,7 @@ module.exports = {
      */
      async invalidDateMessage(interaction)	{
         try {
-            const invalidDateMessage = 'Invalid date entered \nPlease suggest a new date which has not passed in MM/DD/YYYY format.';
+            const invalidDateMessage = 'Invalid date entered! \nPlease suggest a new date which has not passed, in MM/DD/YYYY format.';
             await interaction.update({ content: invalidDateMessage, embeds: [], components: [] , ephemeral: true });
         } catch (error) {
             console.error(error);
