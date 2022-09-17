@@ -4,23 +4,37 @@
  */
 
 // Require the necessary discord.js classes
-const { Client, Collection, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder,SelectMenuBuilder } = require('discord.js');
-const { token, mainChannelId } = require('./config.json');
+const {
+	Client,
+	Collection,
+	GatewayIntentBits,
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	EmbedBuilder,
+	SelectMenuBuilder
+} = require('discord.js');
+const {
+	token,
+	mainChannelId
+} = require('./config.json');
 const forms = require("./forms");
 const fs = require('node:fs');
 const path = require('node:path');
 const fetch = (...args) => import('node-fetch').then(({
-    default: fetch
+	default: fetch
 }) => fetch(...args)); // node-fetch import
 
 
 // Import dependecies to work with CSV
 const fsCsv = require("fs");
 const csv = require("csvtojson"); // To read the csv file 
-const { Parser } = require("json2csv"); // To write the csv file
+const {
+	Parser
+} = require("json2csv"); // To write the csv file
 
 // Create a new client instance
-const client = new Client({ 
+const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 	],
@@ -28,8 +42,8 @@ const client = new Client({
 
 // Hold all of the slash commands of this client (empty now)
 client.commands = new Collection();
-const commandsPath = path.join(__dirname, 'commands');	// The path of the file storing the commands
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));	// Take only the javascript files
+const commandsPath = path.join(__dirname, 'commands'); // The path of the file storing the commands
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js')); // Take only the javascript files
 
 // fill the client.commands collection with the slash commands
 for (const file of commandFiles) {
@@ -41,8 +55,8 @@ for (const file of commandFiles) {
 }
 
 // When the client is ready, run this code (only once)
-client.once('ready', async () => { 
-	console.log('Ready !');	
+client.once('ready', async () => {
+	console.log('Ready !');
 	getCourseRequests();
 	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
 	setInterval(() => getCourseRequests(), 3600000);
@@ -54,17 +68,18 @@ client.once('ready', async () => {
  */
 function getCourseRequests() {
 	// GET HTTP request
-	fetch( "http://localhost:8080/new_course_requests")
-            .then(response => response.json()) 
-            .then(data => {
-				//console.log(data); //Uncomment if you want to test
+	fetch("http://localhost:8080/new_course_requests")
+		.then(response => response.json())
+		.then(data => {
+			//console.log(data); //Uncomment if you want to test
 
-				let arrayOfCourseRequests = data.result;
+			let arrayOfCourseRequests = data.result;
 
-				arrayOfCourseRequests.forEach(courseRequest => {
-					sendNewClientMessage(courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.DateOptions);
-				});
-			})
+			arrayOfCourseRequests.forEach(courseRequest => {
+				sendNewClientMessage(courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.DateOptions);
+			});
+		})
+		.catch(err => console.error(err));
 }
 
 
@@ -88,27 +103,28 @@ function sendNewClientMessage(subject, frequency, level, money, classDuration, a
 		.setColor(0x7289DA)
 		.setTitle('New Client Anouncement')
 		.setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Class(es) per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${availabilities.join(", ")}\n**Class duration**: ${classDuration} hour(s)`)
-		.setTimestamp() 
-		.setFooter({ text: 'Please select the date and time that fits you best and we will get back to you on the next steps.', iconURL:'https://i.imgur.com/i1k870R.png'});
+		.setTimestamp()
+		.setFooter({
+			text: 'Please select the date and time that fits you best and we will get back to you on the next steps.',
+			iconURL: 'https://i.imgur.com/i1k870R.png'
+		});
 
 	//Create a row object that will hold the select menu
 	const row = new ActionRowBuilder();
 
 	//Create Select Menu object
 	const menu = new SelectMenuBuilder()
-				.setCustomId("dateSelection")
-				.setPlaceholder(`Please select ${frequency} date option(s)`)
-				.setMinValues(frequency)
-				.setMaxValues(frequency);
+		.setCustomId("dateSelection")
+		.setPlaceholder(`Please select ${frequency} date option(s)`)
+		.setMinValues(frequency)
+		.setMaxValues(frequency);
 
 	//Loop through the availabilities' list and display every ability to tutor via select menu 
 	availabilities.forEach((val) => {
-		menu.addOptions(
-			{
-				"label": val,
-				"value": val
-			}
-		)
+		menu.addOptions({
+			"label": val,
+			"value": val
+		})
 	});
 
 	//Add menu to row
@@ -116,36 +132,47 @@ function sendNewClientMessage(subject, frequency, level, money, classDuration, a
 
 	// Add submit button inside new row
 	const row2 = new ActionRowBuilder()
-		.addComponents( 
+		.addComponents(
 			new ButtonBuilder()
-				.setCustomId('submitButton')
-				.setLabel('Submit request')
-				.setStyle(ButtonStyle.Primary));
-			
+			.setCustomId('submitButton')
+			.setLabel('Submit request')
+			.setStyle(ButtonStyle.Primary));
+
 	// Sends both objects to channel
-	channel.send({ embeds: [msgEmbed], components: [row,row2]});
+	channel.send({
+		embeds: [msgEmbed],
+		components: [row, row2]
+	});
 }
 
 
 client.on('interactionCreate', async interaction => {
-	
+
 	// The answers of all tutors that are stored inside the CSV in the form of an array
 	const answers = await csv().fromFile("answers.csv");
-	
+
 	if (interaction.customId === 'dateSelection') {
-		
+
 		// Checks if the tutor has already an answer stored inside then CVS
 		if (tutorIdInCSV(interaction.user.id, answers)) {
 			// Option: Please make sur to submit your other answer before selecting this one.
 			deleteTutorAnswer(interaction.user.id, answers); // deletes his answer
-		} 
+		}
 		// Pushes the latest answer 
-		answers.push({ tutorId: interaction.user.id, selection: interaction.values.toString() });
+		answers.push({
+			tutorId: interaction.user.id,
+			selection: interaction.values.toString()
+		});
 
 		//Writes the modifications in the CSV file 
-		fsCsv.writeFileSync("answers.csv", new Parser({fields: ["tutorId", "selection"] }).parse(answers));
+		fsCsv.writeFileSync("answers.csv", new Parser({
+			fields: ["tutorId", "selection"]
+		}).parse(answers));
 
-		interaction.reply({ content: "If you're done with your selection, please submit. You can still change your selection.", ephemeral: true })
+		interaction.reply({
+			content: "If you're done with your selection, please submit. You can still change your selection.",
+			ephemeral: true
+		})
 	}
 
 
@@ -154,9 +181,14 @@ client.on('interactionCreate', async interaction => {
 		// POST request to API is created with tutorId and selection under tutorDemand route
 
 		// Delete the appropriate line in the CSV and write the new CSV state
-		fsCsv.writeFileSync("answers.csv", new Parser({fields: ["tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
+		fsCsv.writeFileSync("answers.csv", new Parser({
+			fields: ["tutorId", "selection"]
+		}).parse(deleteTutorAnswer(interaction.user.id, answers)));
 
-		interaction.reply({content: "Your request has been sent.", ephemeral: true});
+		interaction.reply({
+			content: "Your request has been sent.",
+			ephemeral: true
+		});
 	}
 
 });
@@ -196,14 +228,14 @@ function deleteTutorAnswer(tutorId, csvArray) {
 	csvArray.every(answer => {
 		if (answer.tutorId == tutorId) {
 			tutorAnswerObject = answer;
-		 return false;
+			return false;
 		}
 		return true;
 	});
 
 	const indexOfElementToDelete = csvArray.indexOf(tutorAnswerObject); // Get the idex of the object to delete
 	if (indexOfElementToDelete > -1) { // only splice array when item is found
-	csvArray.splice(indexOfElementToDelete, 1); // 2nd parameter means remove one item only
+		csvArray.splice(indexOfElementToDelete, 1); // 2nd parameter means remove one item only
 	}
 
 	return csvArray;
@@ -229,23 +261,25 @@ client.on('interactionCreate', async interaction => {
 		await chosenCommand.execute(interaction);
 	} catch (error) {
 		console.error(error);
-		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		await interaction.reply({
+			content: 'There was an error while executing this command!',
+			ephemeral: true
+		});
 	}
 });
 
 // This block of code has if else statements to handle all of the users' interactions with the bot
-client.on('interactionCreate', async interaction => 
-{
+client.on('interactionCreate', async interaction => {
 	// Handle the submit form interaction for T04 testing
 	if (interaction.isModalSubmit() && interaction.customId === 'testModal') {
 		testModalSubmission(interaction);
-	}	
-	
+	}
+
 	// Handle the select menu interaction (/job command) for T04 testing
-	else if (interaction.isSelectMenu() && interaction.customId === 'classSelect')	{
+	else if (interaction.isSelectMenu() && interaction.customId === 'classSelect') {
 		jobMessageInteraction(interaction);
 	}
-	
+
 });
 
 /**
@@ -255,7 +289,7 @@ client.on('interactionCreate', async interaction =>
  * 
  * @param {Interaction} interaction The user interaction object
  */
-async function jobMessageInteraction(interaction)	{
+async function jobMessageInteraction(interaction) {
 	// The chosen class' ID
 	const selectedClassId = interaction.values[0];
 
@@ -264,7 +298,10 @@ async function jobMessageInteraction(interaction)	{
 		forms.execute(interaction, selectedClassId);
 	} catch (error) {
 		console.error(error);
-		interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		interaction.reply({
+			content: 'There was an error while executing this command!',
+			ephemeral: true
+		});
 	}
 }
 
@@ -278,7 +315,7 @@ async function jobMessageInteraction(interaction)	{
  * 
  * @param {Interaction} interaction The user interaction object
  */
-async function testModalSubmission(interaction)	{
+async function testModalSubmission(interaction) {
 	// Get the data entered by the user
 	const userName = interaction.fields.getTextInputValue('nameInput');
 	const aboutSelf = interaction.fields.getTextInputValue('aboutSelfInput');
@@ -286,7 +323,7 @@ async function testModalSubmission(interaction)	{
 
 	// print the data. FOR TESTING ONLY
 	console.log(`User: ${interaction.user.id} \nName: ${userName} \nWhy apply: ${aboutSelf} \nClass ID: ${selectedClassId}\n`);
-	
+
 	// Holds the extracted data in JSON format (to be sent to the API)
 	const requestData = {
 		name: userName,
@@ -304,10 +341,18 @@ async function testModalSubmission(interaction)	{
 	try {
 		// Update the user's request into a confirmation message
 		const confirmationMessage = 'Your submission has been received successfully! \nYou will recieve an email about the status of your request when it is completed.';
-		await interaction.update({ content: confirmationMessage, embeds: [], components: [] , ephemeral: true });
+		await interaction.update({
+			content: confirmationMessage,
+			embeds: [],
+			components: [],
+			ephemeral: true
+		});
 	} catch (error) {
 		console.error(error);
-		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		await interaction.reply({
+			content: 'There was an error while executing this command!',
+			ephemeral: true
+		});
 	}
 
 }
