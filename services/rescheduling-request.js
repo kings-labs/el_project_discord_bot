@@ -185,14 +185,18 @@ module.exports = {
             else if (412 === res.status)    {
                 updateMessage.invalidClassIdMessage(interaction);
             }
-            // Update the message if the user entered an invalid date
+            // Update the message if the user entered an invalid date format
             else if (408 === res.status)    {
-                updateMessage.invalidDateMessage(interaction);
+                updateMessage.invalidDateFormatMessage(interaction);
             }
             // Update the message if the user has already submitted a request
             else if (406 == res.status) {
                 console.log(`Tutor: ${interaction.user.id} \nClass: ${selectedClassId} \nReason: ${reschedulingReason}\nNew date: ${newDate}`);   // FOR TESTING ONLY
                 updateMessage.pendingRequestMessage(interaction);
+            }
+			// Update the message if the user entered a date in the past
+            else if (402 === res.status)    {
+                updateMessage.datePassedMessage(interaction);
             }
 		})
 		// Handle server errors

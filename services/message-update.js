@@ -67,15 +67,30 @@ module.exports = {
 
     /**
      * Update the interaction's message to inform the user that they
-     * have entered an invalid date, either because it has passed or it is
-     * in an invalid format.
+     * have entered an invalid date format.
      * 
      * @param {interaction} interaction The user interaction object
      */
-     async invalidDateMessage(interaction)	{
+     async invalidDateFormatMessage(interaction)	{
         try {
-            const invalidDateMessage = 'Invalid date entered! \nPlease suggest a new date which has not passed, in MM/DD/YYYY format.';
-            await interaction.update({ content: invalidDateMessage, embeds: [], components: [] , ephemeral: true });
+            const invalidDateFormatMessage = 'Invalid date format entered! \nPlease suggest a new date in MM/DD/YYYY format.';
+            await interaction.update({ content: invalidDateFormatMessage, embeds: [], components: [] , ephemeral: true });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    },
+
+    /**
+     * Update the interaction's message to inform the user that they
+     * have entered an invalid date because it is not in the future.
+     * 
+     * @param {interaction} interaction The user interaction object
+     */
+     async datePassedMessage(interaction)	{
+        try {
+            const datePassedMessage = 'Invalid date entered! \nYour suggested date has to be in the future.';
+            await interaction.update({ content: datePassedMessage, embeds: [], components: [] , ephemeral: true });
         } catch (error) {
             console.error(error);
             await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
