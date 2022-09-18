@@ -4,8 +4,20 @@
  */
 
 // Require the necessary discord.js classes
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, Collection } = require('discord.js');
-const { token, mainChannelId } = require('./config.json');
+const {
+	Client,
+	GatewayIntentBits,
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	EmbedBuilder,
+	SelectMenuBuilder,
+	Collection,
+} = require('discord.js');
+const {
+	token,
+	mainChannelId
+} = require('./config.json');
 const feedbackRequest = require("./services/feedback-request");
 const fs = require('node:fs');
 const path = require('node:path');
@@ -13,10 +25,12 @@ const path = require('node:path');
 // Import dependecies to work with CSV
 const fsCsv = require("fs");
 const csv = require("csvtojson"); // To read the csv file 
-const { Parser } = require("json2csv"); // To write the 
+const {
+	Parser
+} = require("json2csv"); // To write the 
 
 // Create a new client instance
-const client = new Client({ 
+const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 	],
@@ -24,8 +38,8 @@ const client = new Client({
 
 // Hold all of the slash commands of this client (empty now)
 client.commands = new Collection();
-const commandsPath = path.join(__dirname, 'commands');	// The path of the file storing the commands
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));	// Take only the javascript files
+const commandsPath = path.join(__dirname, 'commands'); // The path of the file storing the commands
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js')); // Take only the javascript files
 
 // fill the client.commands collection with the slash commands
 for (const file of commandFiles) {
@@ -37,8 +51,8 @@ for (const file of commandFiles) {
 }
 
 // When the client is ready, run this code (only once)
-client.once('ready', () => { 
-	console.log('Ready !');	
+client.once('ready', () => {
+	console.log('Ready !');
 	sendNewClientMessage(1, ["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2, 1);
 	sendNewClientMessage(2, ["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "CS", "Uni", 1, 2);
 });
@@ -62,27 +76,28 @@ function sendNewClientMessage(announcementId, availabilities, money, subject, le
 		.setColor(0x7289DA)
 		.setTitle('New Client Anouncement')
 		.setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Class(es) per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${availabilities.join(", ")}\n**Class duration**: ${classDuration} hour(s)`)
-		.setTimestamp() 
-		.setFooter({ text: 'Please select the date and time that fits you best and we will get back to you on the next steps.', iconURL:'https://i.imgur.com/i1k870R.png'});
+		.setTimestamp()
+		.setFooter({
+			text: 'Please select the date and time that fits you best and we will get back to you on the next steps.',
+			iconURL: 'https://i.imgur.com/i1k870R.png'
+		});
 
 	//Create a row object that will hold the select menu
 	const row = new ActionRowBuilder();
 
 	//Create Select Menu object
 	const menu = new SelectMenuBuilder()
-				.setCustomId("dateSelection")
-				.setPlaceholder(`Please select ${frequency} date option(s)`)
-				.setMinValues(frequency)
-				.setMaxValues(frequency)
+		.setCustomId("dateSelection")
+		.setPlaceholder(`Please select ${frequency} date option(s)`)
+		.setMinValues(frequency)
+		.setMaxValues(frequency)
 
 	//Loop through the availabilities' list and display every ability to tutor via select menu 
 	availabilities.forEach((dateAndTime) => {
-		menu.addOptions(
-			{
-				"label": dateAndTime,
-				"value": dateAndTime
-			}
-		)
+		menu.addOptions({
+			"label": dateAndTime,
+			"value": `${announcementId},${dateAndTime}`
+		})
 	});
 
 	//Add menu to row
@@ -90,73 +105,135 @@ function sendNewClientMessage(announcementId, availabilities, money, subject, le
 
 	// Add submit button inside new row
 	const row2 = new ActionRowBuilder()
-		.addComponents( 
+		.addComponents(
 			new ButtonBuilder()
-				.setCustomId("submitButton")
-				.setLabel('Submit request')
-				.setStyle(ButtonStyle.Success),
+			.setCustomId("submitButton")
+			.setLabel('Submit request')
+			.setStyle(ButtonStyle.Success),
 
 			new ButtonBuilder()
-				.setCustomId("cancelButton")
-				.setLabel('Cancel request')
-				.setStyle(ButtonStyle.Danger),
+			.setCustomId("cancelButton")
+			.setLabel('Cancel request')
+			.setStyle(ButtonStyle.Danger),
 
 		);
-			
+
 	// Sends both objects to channel
-	channel.send({ embeds: [msgEmbed], components: [row,row2]});
+	channel.send({
+		embeds: [msgEmbed],
+		components: [row, row2]
+	});
 }
 
 
 client.on('interactionCreate', async interaction => {
-	
+
 	// The answers of all tutors that are stored inside the CSV in the form of an array
-	const answers = await csv().fromFile("answers.csv");
+	const csvArray = await csv().fromFile("answers.csv");
 
 	if (interaction.customId === 'dateSelection') {
-	
+
+		// Extract from the answer the announcement id
+		const announcementId = interaction.values[0].split(",")[0];
+
 		// Checks if the tutor has already an answer stored inside then CVS
-		if (tutorMadeASelection(interaction.user.id, answers)) {
-			interaction.reply({ content: "You have registered answers to a previous announcement which you have not yet submitted or canceled. Please do so before attempting to register new one for this announcement.", ephemeral: true });
-		} 
-		else {
+		if (tutorMadeASelection(interaction.user.id, csvArray)) {
+			interaction.reply({
+				content: "You have registered answers to a previous announcement which you have not yet submitted or canceled. Please do so before attempting to register new one for this announcement.",
+				ephemeral: true
+			});
+		} else {
+
+			// Extract from the answer only the days and times that we store inside the array answer
+			let answer = [];
+			for (let i = 0; i < interaction.values.length; i++) {
+				answer.push(interaction.values[i].split(",")[1]);
+			}
+
 			// Pushes the latest answer 
-			answers.push({ tutorId: interaction.user.id, selection: interaction.values.toString() });
+			csvArray.push({
+				announcementId: announcementId,
+				tutorId: interaction.user.id,
+				selection: answer.toString()
+			});
 
 			//Writes the modifications in the CSV file 
-			fsCsv.writeFileSync("answers.csv", new Parser({fields: ["tutorId", "selection"] }).parse(answers));
+			fsCsv.writeFileSync("answers.csv", new Parser({
+				fields: ["announcementId", "tutorId", "selection"]
+			}).parse(csvArray));
 
-			interaction.reply({ content: "If you're done with your selection, please submit. You can still change your selection.", ephemeral: true });
+			interaction.reply({
+				content: "If you're done with your selection, please submit. You can still change your selection.",
+				ephemeral: true
+			});
 		}
-		
+
 	}
 
 	if (interaction.customId === 'submitButton') {
+		// If the tutor indeed made a selection, run this code.
+		if (tutorMadeASelection(interaction.user.id, csvArray)) {
 
-		if (tutorMadeASelection(interaction.user.id, answers)) {
+			// Stores the announcementId that is attached to the tutor that clicked the submit button.
+			let announcementId = undefined;
+			// Stores the selection of the user that clicked the submit button.
+			let answerValue = undefined;
+			// Extract from the CSV the announcementId of the submit button that has been clicked.
+			csvArray.forEach(answer => {
+				if (answer.tutorId == interaction.user.id) {
+					announcementId = answer.announcementId;
+					answerValue = answer.selection;
+				}
+			});
 
-			// POST request to API is created with tutorId and selection under tutorDemand route
+			// POST request to API is created with tutorId and selection under tutorDemand route with announcementId
 
-			interaction.reply({content: "Your request has been sent.", ephemeral: true});
+			interaction.reply({
+				content: `Your request for ${answerValue.replace(",", ", ")} has been sent.`,
+				ephemeral: true
+			});
 
 			// Delete the appropriate line in the CSV and write the new CSV state
-			fsCsv.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
-		}
-		else {
-			interaction.reply({content: "Please make sure to select your date options before submitting a request.", ephemeral: true});
+			fsCsv.writeFileSync("answers.csv", new Parser({
+				fields: ["announcementId", "tutorId", "selection"]
+			}).parse(deleteTutorAnswer(interaction.user.id, csvArray)));
+		} else {
+			interaction.reply({
+				content: "Please (re)select your date options before submitting a request.",
+				ephemeral: true,
+			});
 		}
 	}
 
 	if (interaction.customId === 'cancelButton') {
+		// If the tutor indeed made a selection, run this code.
+		if (tutorMadeASelection(interaction.user.id, csvArray)) {
 
-		if (tutorMadeASelection(interaction.user.id, answers)) {
+			// Stores the announcementId that is attached to the tutor that clicked the submit button.
+			let announcementId = undefined;
+			// Stores the selection of the user that clicked the submit button.
+			let answerValue = undefined;
+			// Extract from the CSV the announcementId of the submit button that has been clicked.
+			csvArray.forEach(answer => {
+				if (answer.tutorId == interaction.user.id) {
+					announcementId = answer.announcementId;
+					answerValue = answer.selection;
+				}
+			});
 
-			fsCsv.writeFileSync("answers.csv", new Parser({fields: [ "tutorId", "selection"] }).parse(deleteTutorAnswer(interaction.user.id, answers)));
+			fsCsv.writeFileSync("answers.csv", new Parser({
+				fields: ["announcementId", "tutorId", "selection"]
+			}).parse(deleteTutorAnswer(interaction.user.id, csvArray)));
 
-			interaction.reply({content: "Your request has been successfully canceled.", ephemeral: true});
-		}
-		else {
-			interaction.reply({content: "You don't have any request in progress at the moment.", ephemeral: true});
+			interaction.reply({
+				content: `Your request for ${answerValue.replace(",", ", ")} has been canceled.`,
+				ephemeral: true
+			});
+		} else {
+			interaction.reply({
+				content: "You don't have any request in progress at the moment.",
+				ephemeral: true
+			});
 		}
 	}
 
@@ -193,22 +270,23 @@ function tutorMadeASelection(tutorId, csvArray) {
  */
 function deleteTutorAnswer(tutorId, csvArray) {
 
-	let tutorAnswerObject = undefined;
+	let answerToDelete = undefined;
 
 	// Find the object to delete and assign it to tutorAnswerObject variable
 	csvArray.every(answer => {
 
 		if (answer.tutorId == tutorId) {
-			tutorAnswerObject = answer;
-		 	return false;
+			answerToDelete = answer;
+			return false;
 		}
 
 		return true;
 	});
 
-	const indexOfElementToDelete = csvArray.indexOf(tutorAnswerObject); // Get the idex of the object to delete
-
-	if (indexOfElementToDelete > -1) { // only splice array when item is found
+	// Get the idex of the object to delete
+	const indexOfElementToDelete = csvArray.indexOf(answerToDelete); 
+	// only splice array when item is found
+	if (indexOfElementToDelete > -1) { 
 		csvArray.splice(indexOfElementToDelete, 1); // 2nd parameter means remove one item only
 	}
 
@@ -234,28 +312,30 @@ client.on('interactionCreate', async interaction => {
 		await chosenCommand.execute(interaction);
 	} catch (error) {
 		console.error(error);
-		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		await interaction.reply({
+			content: 'There was an error while executing this command!',
+			ephemeral: true
+		});
 	}
 });
 
 // This block of code has if else statements to handle all of the users' interactions with the bot
-client.on('interactionCreate', async interaction => 
-{
+client.on('interactionCreate', async interaction => {
 	// Handle clicking the start button for submitting a class feedback
-	if (interaction.isButton() && interaction.customId === 'startFeedback')	{
+	if (interaction.isButton() && interaction.customId === 'startFeedback') {
 		feedbackRequest.sendFeedbackMessage(interaction);
 	}
 
 	// Handle choosing the class for submitting a class feedback
-	else if (interaction.isSelectMenu() && interaction.customId === 'feedbackClassSelected')	{
+	else if (interaction.isSelectMenu() && interaction.customId === 'feedbackClassSelected') {
 		feedbackRequest.showFeedbackForm(interaction);
 	}
 
 	// Handle submitting a class feedback form
-	else if(interaction.isModalSubmit() && interaction.customId === 'feedbackForm') {
+	else if (interaction.isModalSubmit() && interaction.customId === 'feedbackForm') {
 		feedbackRequest.feedbackFormSubmission(interaction);
-	}	
-	
+	}
+
 });
 
 
