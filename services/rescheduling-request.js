@@ -22,9 +22,7 @@ module.exports = {
 	async sendReschedulingMessage(interaction) 
 	{
 		// url of the API call to get this tutor's classes
-		// const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
-		const url = `${apiUrlPrefix}/tutor_classes/0123qwert`;    // FOR TESTING ONLY. DELETE BEFORE MERGING
-
+		const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
 
 		// An HTTP GET request
         fetch(url)
@@ -178,7 +176,6 @@ module.exports = {
 		.then(res => {
 		    // Update the message if there isn't any error
 			if (200 === res.status)	{
-                console.log(`Tutor: ${interaction.user.id} \nClass: ${selectedClassId} \nReason: ${reschedulingReason}\nNew date: ${newDate}`);   // FOR TESTING ONLY
 				updateMessage.newDateConfirmationMessage(interaction, newDate);
 			}
             // Update the message if the user entered an invalid class ID
@@ -191,7 +188,6 @@ module.exports = {
             }
             // Update the message if the user has already submitted a request
             else if (406 == res.status) {
-                console.log(`Tutor: ${interaction.user.id} \nClass: ${selectedClassId} \nReason: ${reschedulingReason}\nNew date: ${newDate}`);   // FOR TESTING ONLY
                 updateMessage.pendingRequestMessage(interaction);
             }
 			// Update the message if the user entered a date in the past
