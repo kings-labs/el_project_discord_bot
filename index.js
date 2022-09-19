@@ -1,44 +1,22 @@
 /**
  * This is the main script of the bot. Running it takes the bot online.
  * It needs to be constantly run for the bot to be always available.
+ * 
+ * To learn more about Discord.js: https://discordjs.guide
  */
 
-// Require the necessary discord.js classes
-const {
-	Client,
-	Collection,
-	GatewayIntentBits,
-	ActionRowBuilder,
-	ButtonBuilder,
-	ButtonStyle,
-	EmbedBuilder,
-	SelectMenuBuilder
-} = require('discord.js');
-const {
-	token,
-	mainChannelId
-} = require('./config.json');
-const forms = require("./forms");
+// Require the necessary files
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
+const { token } = require('./config.json');
+const feedbackRequest = require('./services/feedback-request');
+const cancellationRequest = require('./services/cancellation-request');
+const reschedulingRequest = require('./services/rescheduling-request');
+const courseRequest = require('./services/course-requests');
 const fs = require('node:fs');
 const path = require('node:path');
-const fetch = (...args) => import('node-fetch').then(({
-	default: fetch
-}) => fetch(...args)); // node-fetch import
-
-
-// Import dependecies to work with CSV
-const fsCsv = require("fs");
-const csv = require("csvtojson"); // To read the csv file 
-const {
-	Parser
-} = require("json2csv"); // To write the csv file
 
 // Create a new client instance
-const client = new Client({
-	intents: [
-		GatewayIntentBits.Guilds,
-	],
-});
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Hold all of the slash commands of this client (empty now)
 client.commands = new Collection();
@@ -57,189 +35,9 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
 	console.log('Ready !');
-	getCourseRequests();
 	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
-	setInterval(() => getCourseRequests(), 3600000);
+	setInterval(() => courseRequest.getCourseRequests(), 3600000);
 });
-
-/**
- * Fetches all new course requests by making a GET HTTP request to the API.
- * For each new course requests, sends a new client announcement to the discord channel.
- */
-function getCourseRequests() {
-	// GET HTTP request
-	fetch("http://localhost:8080/new_course_requests")
-		.then(response => response.json())
-		.then(data => {
-			//console.log(data); //Uncomment if you want to test
-
-			let arrayOfCourseRequests = data.result;
-
-			arrayOfCourseRequests.forEach(courseRequest => {
-				sendNewClientMessage(courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.DateOptions);
-			});
-		})
-		.catch(err => console.error(err));
-}
-
-
-
-/**
- * Sends a message displaying a new client annoucement to tutor's discord channel.
- * User has the possibility to select time slots via a button.
- * @param {Array} availabilities 
- * @param {number} money 
- * @param {String} subject 
- * @param {number} level 
- * @param {number} frequency
- * @param {number} classDuration
- */
-function sendNewClientMessage(subject, frequency, level, money, classDuration, availabilities) {
-
-	// Get the channel to which it will send the annoucements
-	const channel = client.channels.cache.get(mainChannelId);
-	// Create message object 
-	const msgEmbed = new EmbedBuilder()
-		.setColor(0x7289DA)
-		.setTitle('New Client Anouncement')
-		.setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Class(es) per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${availabilities.join(", ")}\n**Class duration**: ${classDuration} hour(s)`)
-		.setTimestamp()
-		.setFooter({
-			text: 'Please select the date and time that fits you best and we will get back to you on the next steps.',
-			iconURL: 'https://i.imgur.com/i1k870R.png'
-		});
-
-	//Create a row object that will hold the select menu
-	const row = new ActionRowBuilder();
-
-	//Create Select Menu object
-	const menu = new SelectMenuBuilder()
-		.setCustomId("dateSelection")
-		.setPlaceholder(`Please select ${frequency} date option(s)`)
-		.setMinValues(frequency)
-		.setMaxValues(frequency);
-
-	//Loop through the availabilities' list and display every ability to tutor via select menu 
-	availabilities.forEach((val) => {
-		menu.addOptions({
-			"label": val,
-			"value": val
-		})
-	});
-
-	//Add menu to row
-	row.addComponents(menu);
-
-	// Add submit button inside new row
-	const row2 = new ActionRowBuilder()
-		.addComponents(
-			new ButtonBuilder()
-			.setCustomId('submitButton')
-			.setLabel('Submit request')
-			.setStyle(ButtonStyle.Primary));
-
-	// Sends both objects to channel
-	channel.send({
-		embeds: [msgEmbed],
-		components: [row, row2]
-	});
-}
-
-
-client.on('interactionCreate', async interaction => {
-
-	// The answers of all tutors that are stored inside the CSV in the form of an array
-	const answers = await csv().fromFile("answers.csv");
-
-	if (interaction.customId === 'dateSelection') {
-
-		// Checks if the tutor has already an answer stored inside then CVS
-		if (tutorIdInCSV(interaction.user.id, answers)) {
-			// Option: Please make sur to submit your other answer before selecting this one.
-			deleteTutorAnswer(interaction.user.id, answers); // deletes his answer
-		}
-		// Pushes the latest answer 
-		answers.push({
-			tutorId: interaction.user.id,
-			selection: interaction.values.toString()
-		});
-
-		//Writes the modifications in the CSV file 
-		fsCsv.writeFileSync("answers.csv", new Parser({
-			fields: ["tutorId", "selection"]
-		}).parse(answers));
-
-		interaction.reply({
-			content: "If you're done with your selection, please submit. You can still change your selection.",
-			ephemeral: true
-		})
-	}
-
-
-	if (interaction.customId === 'submitButton') {
-
-		// POST request to API is created with tutorId and selection under tutorDemand route
-
-		// Delete the appropriate line in the CSV and write the new CSV state
-		fsCsv.writeFileSync("answers.csv", new Parser({
-			fields: ["tutorId", "selection"]
-		}).parse(deleteTutorAnswer(interaction.user.id, answers)));
-
-		interaction.reply({
-			content: "Your request has been sent.",
-			ephemeral: true
-		});
-	}
-
-});
-
-/**
- * Searches through the csv file if there already is an answer of a particular tutor. 
- * 
- * @param {Number} tutorId The id of the tutor we're looking for.
- * @param {Array} csvArray The array that contains all the tutors' answers.
- * @returns true if the tutor has been found, false otherwise.
- */
-function tutorIdInCSV(tutorId, csvArray) {
-
-	if (csvArray.length == 0) return false;
-
-	let isFound = false;
-
-	csvArray.forEach(answer => {
-		if (answer.tutorId == tutorId) {
-			isFound = true;
-		}
-	});
-	return isFound;
-}
-/**
- * 
- * This function deletes the object of a particular tutor inside the csv array.
- * 
- * @param {number} tutorId The id of the tutor from whom we are going to delete the answer.
- * @param {Array} csvArray The array that contains the element we want to delete. 
- * @returns The updated version of the csv array.
- */
-function deleteTutorAnswer(tutorId, csvArray) {
-	let tutorAnswerObject = undefined;
-
-	// Find the object to delete and assign it to tutorAnswerObject variable
-	csvArray.every(answer => {
-		if (answer.tutorId == tutorId) {
-			tutorAnswerObject = answer;
-			return false;
-		}
-		return true;
-	});
-
-	const indexOfElementToDelete = csvArray.indexOf(tutorAnswerObject); // Get the idex of the object to delete
-	if (indexOfElementToDelete > -1) { // only splice array when item is found
-		csvArray.splice(indexOfElementToDelete, 1); // 2nd parameter means remove one item only
-	}
-
-	return csvArray;
-}
 
 
 // ---- INTERACTION HANDLING ----
@@ -269,93 +67,56 @@ client.on('interactionCreate', async interaction => {
 });
 
 // This block of code has if else statements to handle all of the users' interactions with the bot
-client.on('interactionCreate', async interaction => {
-	// Handle the submit form interaction for T04 testing
-	if (interaction.isModalSubmit() && interaction.customId === 'testModal') {
-		testModalSubmission(interaction);
+client.on('interactionCreate', async interaction => 
+{
+	// Handle button interactions
+	if (interaction.isButton())	{
+		// Handle clicking the start button for submitting a class feedback
+		if (interaction.customId === 'startFeedback')	{
+			feedbackRequest.sendFeedbackMessage(interaction);
+		}
+		// Handle clicking the start button for requesting a class cancellation
+		else if (interaction.customId === 'startCancellation')	{
+			cancellationRequest.sendCancellationMessage(interaction);
+		}
+		// Handle clicking the start button for requesting a class rescheduling
+		else if (interaction.customId === 'startRescheduling')	{
+			reschedulingRequest.sendReschedulingMessage(interaction);
+		}
 	}
 
-	// Handle the select menu interaction (/job command) for T04 testing
-	else if (interaction.isSelectMenu() && interaction.customId === 'classSelect') {
-		jobMessageInteraction(interaction);
+	// Handle select-menu interactions
+	else if (interaction.isSelectMenu())	{
+		// Handle choosing the class for submitting a class feedback
+		if (interaction.customId === 'feedbackClassSelected')	{
+			feedbackRequest.showFeedbackForm(interaction);
+		}
+		// Handle choosing the class for requesting a class cancellation
+		else if (interaction.customId === 'cancellationClassSelected')	{
+			cancellationRequest.showCancellationForm(interaction);
+		}
+		// Handle choosing the class for requesting a class rescheduling
+		else if (interaction.customId === 'reschedulingClassSelected')	{
+			reschedulingRequest.showReschedulingForm(interaction);
+		}
 	}
 
+	// Handle modal submission interactions
+	else if (interaction.isModalSubmit())	{
+		// Handle submitting a class feedback form
+		if (interaction.customId === 'feedbackForm') {
+			feedbackRequest.feedbackFormSubmission(interaction);
+		}
+		// Handle submitting a class cancellation request
+		else if (interaction.customId === 'cancellationForm')	{
+			cancellationRequest.cancellationFormSubmission(interaction);
+		}
+		// Handle submitting a class rescheduling request
+		else if (interaction.customId === 'reschedulingForm')	{
+			reschedulingRequest.reschedulingFormSubmission(interaction);
+		}
+	} 
 });
-
-/**
- * Handle the select menu interaction (/job command).
- * Take the chosen class' class ID, then call the 'forms' script execute function 
- * and pass it the class ID.
- * 
- * @param {Interaction} interaction The user interaction object
- */
-async function jobMessageInteraction(interaction) {
-	// The chosen class' ID
-	const selectedClassId = interaction.values[0];
-
-	try {
-		// call the forms function which shows users a form (modal)
-		forms.execute(interaction, selectedClassId);
-	} catch (error) {
-		console.error(error);
-		interaction.reply({
-			content: 'There was an error while executing this command!',
-			ephemeral: true
-		});
-	}
-}
-
-/**
- * Handle the test modal submission (forms submission).
- * Extract all of the data from the interaction, then make an
- * HTTP POST request with the API.
- * 
- * The API part is now commented out because there's no route for
- * this test function.
- * 
- * @param {Interaction} interaction The user interaction object
- */
-async function testModalSubmission(interaction) {
-	// Get the data entered by the user
-	const userName = interaction.fields.getTextInputValue('nameInput');
-	const aboutSelf = interaction.fields.getTextInputValue('aboutSelfInput');
-	const selectedClassId = interaction.fields.getTextInputValue('classInfo');
-
-	// print the data. FOR TESTING ONLY
-	console.log(`User: ${interaction.user.id} \nName: ${userName} \nWhy apply: ${aboutSelf} \nClass ID: ${selectedClassId}\n`);
-
-	// Holds the extracted data in JSON format (to be sent to the API)
-	const requestData = {
-		name: userName,
-		about: aboutSelf,
-		classId: selectedClassId
-	};
-	// const params = {
-	// 	headers : {'Content-Type': 'application/json'},
-	// 	body: requestData,
-	// 	method: "POST"
-	// };
-
-	// fetch("url", params);
-
-	try {
-		// Update the user's request into a confirmation message
-		const confirmationMessage = 'Your submission has been received successfully! \nYou will recieve an email about the status of your request when it is completed.';
-		await interaction.update({
-			content: confirmationMessage,
-			embeds: [],
-			components: [],
-			ephemeral: true
-		});
-	} catch (error) {
-		console.error(error);
-		await interaction.reply({
-			content: 'There was an error while executing this command!',
-			ephemeral: true
-		});
-	}
-
-}
 
 // Login to Discord with your client's token
 client.login(token);
