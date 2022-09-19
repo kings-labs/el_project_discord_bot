@@ -11,6 +11,7 @@ const { token } = require('./config.json');
 const feedbackRequest = require('./services/feedback-request');
 const cancellationRequest = require('./services/cancellation-request');
 const reschedulingRequest = require('./services/rescheduling-request');
+const courseRequest = require('./services/course-requests');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -19,8 +20,8 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Hold all of the slash commands of this client (empty now)
 client.commands = new Collection();
-const commandsPath = path.join(__dirname, 'commands');	// The path of the file storing the commands
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));	// Take only the javascript files
+const commandsPath = path.join(__dirname, 'commands'); // The path of the file storing the commands
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js')); // Take only the javascript files
 
 // fill the client.commands collection with the slash commands
 for (const file of commandFiles) {
@@ -32,9 +33,12 @@ for (const file of commandFiles) {
 }
 
 // When the client is ready, run this code (only once)
-client.once('ready', () => {
-	console.log('Ready!');
+client.once('ready', async () => {
+	console.log('Ready !');
+	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
+	setInterval(() => courseRequest.getCourseRequests(), 3600000);
 });
+
 
 // ---- INTERACTION HANDLING ----
 
@@ -55,7 +59,10 @@ client.on('interactionCreate', async interaction => {
 		await chosenCommand.execute(interaction);
 	} catch (error) {
 		console.error(error);
-		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		await interaction.reply({
+			content: 'There was an error while executing this command!',
+			ephemeral: true
+		});
 	}
 });
 
@@ -108,8 +115,7 @@ client.on('interactionCreate', async interaction =>
 		else if (interaction.customId === 'reschedulingForm')	{
 			reschedulingRequest.reschedulingFormSubmission(interaction);
 		}
-	}
-	
+	} 
 });
 
 // Login to Discord with your client's token
