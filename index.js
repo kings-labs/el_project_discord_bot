@@ -53,6 +53,12 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 client.once('ready', () => {
 	console.log('Ready !');
+	
+	//Delete every row in CSV
+	fsCsv.writeFileSync("answers.csv", new Parser({
+		fields: ["announcementId", "tutorId", "selection"]
+	}).parse([]));
+
 	sendNewClientMessage(1, ["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2, 1);
 	sendNewClientMessage(2, ["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "CS", "Uni", 1, 2);
 });
