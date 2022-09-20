@@ -39,11 +39,10 @@ client.once('ready', async () => {
 	courseRequest.clearCSV();
 	// Get the channel to which the bot will send the course requests to
 	const mainChannel = client.channels.cache.get(mainChannelId);
+	// Executes the function getCourseRequests at the start of the application.
+	courseRequest.getCourseRequests(mainChannel);
 	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
 	setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
-	courseRequest.sendNewClientMessage(mainChannel, 3, [{"ID":20,"String":"Friday 11am"},{"ID":21,"String":"Monday 1pm"}], 23, "Math", "GSCE", 1, 2);
-	courseRequest.sendNewClientMessage(mainChannel, 2, [{"ID":20,"String":"Friday 11am"},{"ID":21,"String":"Monday 1pm"}], 23, "CS", "High", 2, 3);
-
 });
 
 
