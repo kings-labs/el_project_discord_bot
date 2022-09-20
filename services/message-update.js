@@ -144,4 +144,66 @@ module.exports = {
         }
     },
 
+    // --- COURSE REQUEST MESSAGES ---
+
+    async alreadySelectedCourseOptionsMessage(interaction)    {
+        try {
+            const alreadySelectedCourseOptionsMessage = 'You have registered answers to a previous announcement which you have not yet submitted or cancelled! \nPlease do so before attempting to register a new one for this announcement.';
+            await interaction.reply({ content: alreadySelectedCourseOptionsMessage , ephemeral: true });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    },
+
+    async waitingForCourseSubmissionMessage(interaction)    {
+        try {
+            const waitingForCourseSubmissionMessage = 'If you are done with your selection, please submit! \nYou can still change your selection.';
+            await interaction.reply({ content: waitingForCourseSubmissionMessage , ephemeral: true });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    },
+
+    async courseRequestConfirmationMessage(interaction, answer)    {
+        try {
+            const courseRequestConfirmationMessage = `Your request for ${answer.replace(",", ", ")} has been sent.`;
+            await interaction.reply({ content: courseRequestConfirmationMessage , ephemeral: true });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    },
+
+    async courseRequestCancellationMessage(interaction, answer)    {
+        try {
+            const courseRequestCancellationMessage = `Your request for ${answer.replace(",", ", ")} has been cancelled.`;
+            await interaction.reply({ content: courseRequestCancellationMessage , ephemeral: true });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    },
+
+    async noCourseDateSelectedMessage(interaction)    {
+        try {
+            const noCourseDateSelectedMessage = 'Please (re)select your date options before submitting a request.';
+            await interaction.reply({ content: noCourseDateSelectedMessage , ephemeral: true });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    },
+
+    async noCourseRequestActiveMessage(interaction)    {
+        try {
+            const noCourseRequestActiveMessage = 'You do not have any request in progress at the moment';
+            await interaction.reply({ content: noCourseRequestActiveMessage , ephemeral: true });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    },
+
 }
