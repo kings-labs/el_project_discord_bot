@@ -40,7 +40,7 @@ client.once('ready', async () => {
 	// Get the channel to which the bot will send the course requests to
 	const mainChannel = client.channels.cache.get(mainChannelId);
 	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
-	// setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
+	setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
 	courseRequest.sendNewClientMessage(mainChannel, 3, ["Friday 3PM", "Wednesday 3PM"], 23, "Math", "GSCE", 1, 2);
 	courseRequest.sendNewClientMessage(mainChannel, 2, ["Friday 3PM", "Wednesday 3PM", "Monday 3PM"], 23, "CS", "High", 2, 3);
 
