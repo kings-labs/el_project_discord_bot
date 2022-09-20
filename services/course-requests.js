@@ -233,7 +233,7 @@ module.exports = {
      * @param {Array} csvArray The array that contains all the tutors' answers.
      * @returns true if the tutor has been found, false otherwise.
      */
- tutorMadeASelection(tutorId, csvArray) {
+function tutorMadeASelection(tutorId, csvArray) {
 
     if (csvArray.length == 0) return false;
 
@@ -255,7 +255,7 @@ module.exports = {
  * @param {Array} csvArray The array that contains the element we want to delete. 
  * @returns The updated version of the csv array.
  */
-deleteTutorAnswer(tutorId, csvArray) {
+function deleteTutorAnswer(tutorId, csvArray) {
 
     let answerToDelete = undefined;
 
