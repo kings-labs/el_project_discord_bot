@@ -1,40 +1,22 @@
 /**
  * This is the main script of the bot. Running it takes the bot online.
  * It needs to be constantly run for the bot to be always available.
+ * 
+ * To learn more about Discord.js: https://discordjs.guide
  */
 
-// Require the necessary discord.js classes
-const {
-	Client,
-	GatewayIntentBits,
-	ActionRowBuilder,
-	ButtonBuilder,
-	ButtonStyle,
-	EmbedBuilder,
-	SelectMenuBuilder,
-	Collection,
-} = require('discord.js');
-const {
-	token,
-	mainChannelId
-} = require('./config.json');
-const feedbackRequest = require("./services/feedback-request");
+// Require the necessary files
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
+const { token, mainChannelId} = require('./config.json');
+const feedbackRequest = require('./services/feedback-request');
+const cancellationRequest = require('./services/cancellation-request');
+const reschedulingRequest = require('./services/rescheduling-request');
+const courseRequest = require('./services/course-requests');
 const fs = require('node:fs');
 const path = require('node:path');
 
-// Import dependecies to work with CSV
-const fsCsv = require("fs");
-const csv = require("csvtojson"); // To read the csv file 
-const {
-	Parser
-} = require("json2csv"); // To write the 
-
 // Create a new client instance
-const client = new Client({
-	intents: [
-		GatewayIntentBits.Guilds,
-	],
-});
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Hold all of the slash commands of this client (empty now)
 client.commands = new Collection();
@@ -51,253 +33,19 @@ for (const file of commandFiles) {
 }
 
 // When the client is ready, run this code (only once)
-client.once('ready', () => {
+client.once('ready', async () => {
 	console.log('Ready !');
-	
-	//Delete every row in CSV
-	fsCsv.writeFileSync("answers.csv", new Parser({
-		fields: ["announcementId", "tutorId", "selection"]
-	}).parse([]));
-
-	sendNewClientMessage(1, ["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "Maths", "GCSE", 2, 1);
-	sendNewClientMessage(2, ["Monday 9AM", "Wednesday 2PM", "Thursday 6PM"], 10, "CS", "Uni", 1, 2);
-});
-
-/**
- * Sends a message displaying a new client annoucement to tutor's discord channel.
- * User has the possibility to select time slots via a button.
- * @param {Array} availabilities 
- * @param {number} money 
- * @param {String} subject 
- * @param {String} level 
- * @param {number} frequency
- * @param {number} classDuration
- */
-function sendNewClientMessage(announcementId, availabilities, money, subject, level, frequency, classDuration) {
-
+	// Reset the answers CSV
+	courseRequest.clearCSV();
 	// Get the channel to which it will send the annoucements
-	const channel = client.channels.cache.get(mainChannelId);
-	// Create message object 
-	const msgEmbed = new EmbedBuilder()
-		.setColor(0x7289DA)
-		.setTitle('New Client Anouncement')
-		.setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Class(es) per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${availabilities.join(", ")}\n**Class duration**: ${classDuration} hour(s)`)
-		.setTimestamp()
-		.setFooter({
-			text: 'Please select the date and time that fits you best and we will get back to you on the next steps.',
-			iconURL: 'https://i.imgur.com/i1k870R.png'
-		});
-
-	//Create a row object that will hold the select menu
-	const row = new ActionRowBuilder();
-
-	//Create Select Menu object
-	const menu = new SelectMenuBuilder()
-		.setCustomId("dateSelection")
-		.setPlaceholder(`Please select ${frequency} date option(s)`)
-		.setMinValues(frequency)
-		.setMaxValues(frequency)
-
-	//Loop through the availabilities' list and display every ability to tutor via select menu 
-	availabilities.forEach((dateAndTime) => {
-		menu.addOptions({
-			"label": dateAndTime,
-			"value": `${announcementId},${dateAndTime}`
-		})
-	});
-
-	//Add menu to row
-	row.addComponents(menu);
-
-	// Add submit button inside new row
-	const row2 = new ActionRowBuilder()
-		.addComponents(
-			new ButtonBuilder()
-			.setCustomId("submitButton")
-			.setLabel('Submit request')
-			.setStyle(ButtonStyle.Success),
-
-			new ButtonBuilder()
-			.setCustomId("cancelButton")
-			.setLabel('Cancel request')
-			.setStyle(ButtonStyle.Danger),
-
-		);
-
-	// Sends both objects to channel
-	channel.send({
-		embeds: [msgEmbed],
-		components: [row, row2]
-	});
-}
-
-
-client.on('interactionCreate', async interaction => {
-
-	// The answers of all tutors that are stored inside the CSV in the form of an array
-	const csvArray = await csv().fromFile("answers.csv");
-
-	if (interaction.customId === 'dateSelection') {
-
-		// Extract from the answer the announcement id
-		const announcementId = interaction.values[0].split(",")[0];
-
-		// Checks if the tutor has already an answer stored inside then CVS
-		if (tutorMadeASelection(interaction.user.id, csvArray)) {
-			interaction.reply({
-				content: "You have registered answers to a previous announcement which you have not yet submitted or canceled. Please do so before attempting to register new one for this announcement.",
-				ephemeral: true
-			});
-		} else {
-
-			// Extract from the answer only the days and times that we store inside the array answer
-			let answer = [];
-			for (let i = 0; i < interaction.values.length; i++) {
-				answer.push(interaction.values[i].split(",")[1]);
-			}
-
-			// Pushes the latest answer 
-			csvArray.push({
-				announcementId: announcementId,
-				tutorId: interaction.user.id,
-				selection: answer.toString()
-			});
-
-			//Writes the modifications in the CSV file 
-			fsCsv.writeFileSync("answers.csv", new Parser({
-				fields: ["announcementId", "tutorId", "selection"]
-			}).parse(csvArray));
-
-			interaction.reply({
-				content: "If you're done with your selection, please submit. You can still change your selection.",
-				ephemeral: true
-			});
-		}
-
-	}
-
-	if (interaction.customId === 'submitButton') {
-		// If the tutor indeed made a selection, run this code.
-		if (tutorMadeASelection(interaction.user.id, csvArray)) {
-
-			// Stores the announcementId that is attached to the tutor that clicked the submit button.
-			let announcementId = undefined;
-			// Stores the selection of the user that clicked the submit button.
-			let answerValue = undefined;
-			// Extract from the CSV the announcementId of the submit button that has been clicked.
-			csvArray.forEach(answer => {
-				if (answer.tutorId == interaction.user.id) {
-					announcementId = answer.announcementId;
-					answerValue = answer.selection;
-				}
-			});
-
-			// POST request to API is created with tutorId and selection under tutorDemand route with announcementId
-
-			interaction.reply({
-				content: `Your request for ${answerValue.replace(",", ", ")} has been sent.`,
-				ephemeral: true
-			});
-
-			// Delete the appropriate line in the CSV and write the new CSV state
-			fsCsv.writeFileSync("answers.csv", new Parser({
-				fields: ["announcementId", "tutorId", "selection"]
-			}).parse(deleteTutorAnswer(interaction.user.id, csvArray)));
-		} else {
-			interaction.reply({
-				content: "Please (re)select your date options before submitting a request.",
-				ephemeral: true,
-			});
-		}
-	}
-
-	if (interaction.customId === 'cancelButton') {
-		// If the tutor indeed made a selection, run this code.
-		if (tutorMadeASelection(interaction.user.id, csvArray)) {
-
-			// Stores the announcementId that is attached to the tutor that clicked the submit button.
-			let announcementId = undefined;
-			// Stores the selection of the user that clicked the submit button.
-			let answerValue = undefined;
-			// Extract from the CSV the announcementId of the submit button that has been clicked.
-			csvArray.forEach(answer => {
-				if (answer.tutorId == interaction.user.id) {
-					announcementId = answer.announcementId;
-					answerValue = answer.selection;
-				}
-			});
-
-			fsCsv.writeFileSync("answers.csv", new Parser({
-				fields: ["announcementId", "tutorId", "selection"]
-			}).parse(deleteTutorAnswer(interaction.user.id, csvArray)));
-
-			interaction.reply({
-				content: `Your request for ${answerValue.replace(",", ", ")} has been canceled.`,
-				ephemeral: true
-			});
-		} else {
-			interaction.reply({
-				content: "You don't have any request in progress at the moment.",
-				ephemeral: true
-			});
-		}
-	}
+	const mainChannel = client.channels.cache.get(mainChannelId);
+	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
+	setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
+	courseRequest.sendNewClientMessage(mainChannel, 3, ["Friday 3PM", "Wednesday 3PM"], 23, "Math", "GSCE", 1, 2);
+	courseRequest.sendNewClientMessage(mainChannel, 2, ["Friday 3PM", "Wednesday 3PM", "Monday 3PM"], 23, "CS", "High", 2, 3);
 
 });
 
-/**
- * Searches through the csv file if there already is an answer of a particular tutor. 
- * 
- * @param {Number} tutorId The id of the tutor we're looking for.
- * @param {Array} csvArray The array that contains all the tutors' answers.
- * @returns true if the tutor has been found, false otherwise.
- */
-function tutorMadeASelection(tutorId, csvArray) {
-
-	if (csvArray.length == 0) return false;
-
-	let isFound = false;
-
-	csvArray.forEach(answer => {
-		if (answer.tutorId == tutorId) {
-			isFound = true;
-		}
-	});
-
-	return isFound;
-}
-/**
- * 
- * This function deletes the object of a particular tutor inside the csv array.
- * 
- * @param {number} tutorId The id of the tutor from whom we are going to delete the answer.
- * @param {Array} csvArray The array that contains the element we want to delete. 
- * @returns The updated version of the csv array.
- */
-function deleteTutorAnswer(tutorId, csvArray) {
-
-	let answerToDelete = undefined;
-
-	// Find the object to delete and assign it to tutorAnswerObject variable
-	csvArray.every(answer => {
-
-		if (answer.tutorId == tutorId) {
-			answerToDelete = answer;
-			return false;
-		}
-
-		return true;
-	});
-
-	// Get the idex of the object to delete
-	const indexOfElementToDelete = csvArray.indexOf(answerToDelete); 
-	// only splice array when item is found
-	if (indexOfElementToDelete > -1) { 
-		csvArray.splice(indexOfElementToDelete, 1); // 2nd parameter means remove one item only
-	}
-
-	return csvArray;
-}
 
 // ---- INTERACTION HANDLING ----
 
@@ -326,24 +74,65 @@ client.on('interactionCreate', async interaction => {
 });
 
 // This block of code has if else statements to handle all of the users' interactions with the bot
-client.on('interactionCreate', async interaction => {
-	// Handle clicking the start button for submitting a class feedback
-	if (interaction.isButton() && interaction.customId === 'startFeedback') {
-		feedbackRequest.sendFeedbackMessage(interaction);
+client.on('interactionCreate', async interaction => 
+{
+	// Handle button interactions
+	if (interaction.isButton())	{
+		// Handle clicking the start button for submitting a class feedback
+		if (interaction.customId === 'startFeedback')	{
+			feedbackRequest.sendFeedbackMessage(interaction);
+		}
+		// Handle clicking the start button for requesting a class cancellation
+		else if (interaction.customId === 'startCancellation')	{
+			cancellationRequest.sendCancellationMessage(interaction);
+		}
+		// Handle clicking the start button for requesting a class rescheduling
+		else if (interaction.customId === 'startRescheduling')	{
+			reschedulingRequest.sendReschedulingMessage(interaction);
+		}
+		else if (interaction.customId === 'submitCourseRequest')	{
+			courseRequest.handleCourseRequestSubmission(interaction);
+		}
+		else if (interaction.customId === 'cancelCourseRequest')	{
+			courseRequest.handleCourseRequestCancellation(interaction);
+		}
 	}
 
-	// Handle choosing the class for submitting a class feedback
-	else if (interaction.isSelectMenu() && interaction.customId === 'feedbackClassSelected') {
-		feedbackRequest.showFeedbackForm(interaction);
+	// Handle select-menu interactions
+	else if (interaction.isSelectMenu())	{
+		// Handle choosing the class for submitting a class feedback
+		if (interaction.customId === 'feedbackClassSelected')	{
+			feedbackRequest.showFeedbackForm(interaction);
+		}
+		// Handle choosing the class for requesting a class cancellation
+		else if (interaction.customId === 'cancellationClassSelected')	{
+			cancellationRequest.showCancellationForm(interaction);
+		}
+		// Handle choosing the class for requesting a class rescheduling
+		else if (interaction.customId === 'reschedulingClassSelected')	{
+			reschedulingRequest.showReschedulingForm(interaction);
+		}
+		else if (interaction.customId === 'courseDateSelected')	{
+			courseRequest.handleCourseDateSelection(interaction);
+		}
 	}
 
-	// Handle submitting a class feedback form
-	else if (interaction.isModalSubmit() && interaction.customId === 'feedbackForm') {
-		feedbackRequest.feedbackFormSubmission(interaction);
-	}
-
+	// Handle modal submission interactions
+	else if (interaction.isModalSubmit())	{
+		// Handle submitting a class feedback form
+		if (interaction.customId === 'feedbackForm') {
+			feedbackRequest.feedbackFormSubmission(interaction);
+		}
+		// Handle submitting a class cancellation request
+		else if (interaction.customId === 'cancellationForm')	{
+			cancellationRequest.cancellationFormSubmission(interaction);
+		}
+		// Handle submitting a class rescheduling request
+		else if (interaction.customId === 'reschedulingForm')	{
+			reschedulingRequest.reschedulingFormSubmission(interaction);
+		}
+	} 
 });
-
 
 // Login to Discord with your client's token
 client.login(token);
