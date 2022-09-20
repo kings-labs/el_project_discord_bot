@@ -41,8 +41,8 @@ client.once('ready', async () => {
 	const mainChannel = client.channels.cache.get(mainChannelId);
 	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
 	setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
-	courseRequest.sendNewClientMessage(mainChannel, 3, ["Friday 3PM", "Wednesday 3PM"], 23, "Math", "GSCE", 1, 2);
-	courseRequest.sendNewClientMessage(mainChannel, 2, ["Friday 3PM", "Wednesday 3PM", "Monday 3PM"], 23, "CS", "High", 2, 3);
+	courseRequest.sendNewClientMessage(mainChannel, 3, [{"ID":20,"String":"Friday 11am"},{"ID":21,"String":"Monday 1pm"}], 23, "Math", "GSCE", 1, 2);
+	courseRequest.sendNewClientMessage(mainChannel, 2, [{"ID":20,"String":"Friday 11am"},{"ID":21,"String":"Monday 1pm"}], 23, "CS", "High", 2, 3);
 
 });
 

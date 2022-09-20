@@ -225,7 +225,7 @@ module.exports = {
 
     /**
      * Reply to the interaction's message to inform the user that they don't have any pending request at the moment. 
-     * It occurs whenever the user tries to cancel their answer to a course request without acc having selected their date options.
+     * It occurs whenever the user tries to cancel their answer to a course without acc having selected their date options.
      * 
      * @param {Interaction} interaction 
      */

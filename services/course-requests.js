@@ -6,7 +6,7 @@
  */
 
 // Require the necessary files
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, IntegrationExpireBehavior } = require('discord.js');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 const updateMessage = require('./message-update'); // Contains useful methods to update the messages shown to users
 // Import dependecies to work with CSV
@@ -47,20 +47,26 @@ module.exports = {
      * Sends a message displaying a new client annoucement to discord.
      * User has the ability to select time slots via a select-menu.
      * @param {object} channel The channel to which the method will send the course requests to.
-     * @param {Array} availabilities All the date options for a particular course request.
+     * @param {Array} dateOptions All the date options for a particular course request with their ID. ex: [{"ID":20,"String":"Friday 11am"},{"ID":21,"String":"Monday 1pm"}]
      * @param {number} money The pay that the tutor will get for doing the class.
      * @param {String} subject The subject of the class.
      * @param {String} level The level of the class (A-Levels, GCSE ...)
      * @param {number} frequency The number of times per week the class will hold
      * @param {number} classDuration The duration of each session in hours.
      */
-    sendNewClientMessage(channel, announcementId, availabilities, money, subject, level, frequency, classDuration) {
+    sendNewClientMessage(channel, announcementId, dateOptions, money, subject, level, frequency, classDuration) {
+
+        // Store data inside dateOptions in appropriate variables
+        const dates = [];
+        dateOptions.forEach((date) => {
+            dates.push(date.String);
+        });
 
         // Create message object 
         const msgEmbed = new EmbedBuilder()
             .setColor(0x7289DA)
             .setTitle('New Client Anouncement')
-            .setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Class(es) per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${availabilities.join(", ")}\n**Class duration**: ${classDuration} hour(s)`)
+            .setDescription(`**Subject:** ${subject} \n**Level:** ${level} \n**Class(es) per week:** ${frequency} \n**Pay per class:** ${money} \n**Time slots:** ${dates.join(", ")}\n**Class duration**: ${classDuration} hour(s)`)
             .setTimestamp()
             .setFooter({
                 text: 'Please select the date and time that fits you best and we will get back to you on the next steps.',
@@ -77,11 +83,11 @@ module.exports = {
             .setMinValues(frequency)
             .setMaxValues(frequency)
 
-        //Loop through the availabilities' list and display every ability to tutor via select menu 
-        availabilities.forEach((dateAndTime) => {
+        //Loop through the dates' list and display every date in select menu 
+        dateOptions.forEach((dateAndTimeObject) => {
             menu.addOptions({
-                "label": dateAndTime,
-                "value": `${announcementId},${dateAndTime}`
+                "label": dateAndTimeObject.String,
+                "value": `${announcementId},${dateAndTimeObject.ID}, ${dateAndTimeObject.String}`
             })
         });
 
@@ -125,23 +131,30 @@ module.exports = {
 			updateMessage.alreadySelectedCourseOptionsMessage(interaction);
 		} else {
 
-			// Extract from the answer only the days and times that we store inside the array answer
+			// Extract from the answer the ID of the dates selected.
 			let answer = [];
 			for (let i = 0; i < interaction.values.length; i++) {
 				answer.push(interaction.values[i].split(",")[1]);
 			}
-            
+
+            // Extract from the answer the dates selected.
+			let dates = [];
+			for (let i = 0; i < interaction.values.length; i++) {
+				dates.push(interaction.values[i].split(",")[2]);
+			}
+
 			// Pushes the latest answer 
 			csvArray.push({
 				announcementId: announcementId,
 				tutorId: interaction.user.id,
-				selection: answer.toString()
+				IdsOfSelectedDates: answer.toString(),
+                selectedDates: dates.toString(),
 			});
 
 
 			//Writes the modifications in the CSV file 
 			fsCsv.writeFileSync("answers.csv", new Parser({
-				fields: ["announcementId", "tutorId", "selection"]
+				fields: ["announcementId", "tutorId", "IdsOfSelectedDates", "selectedDates"]
 			}).parse(csvArray));
 
 			updateMessage.waitingForCourseSubmissionMessage(interaction);
@@ -155,30 +168,39 @@ module.exports = {
     async handleCourseRequestSubmission(interaction) {
         // The answers of all tutors that are stored inside the CSV in the form of an array
 		const csvArray = await csv().fromFile("answers.csv");
+
         // If the tutor indeed made a selection, run this code.
 		if (tutorMadeASelection(interaction.user.id, csvArray)) {
 
-			// Stores the announcementId that is attached to the tutor that clicked the submit button.
+            // Stores the announcementId that is attached to the tutor that clicked the submit button as a number.
 			let announcementId = undefined;
-			// Stores the selection of the user that clicked the submit button.
-			let answerValue = undefined;
-			// Extract from the CSV the announcementId of the submit button that has been clicked.
+			// Stores the ids (numbers) of the dates selected by the user.
+			let answerIds = [];
+            // Stores the dates selected by the user (String).
+            let answerDates = [];
+			// Extract from the CSV the answer of the tutor that clicked the submit button.
 			csvArray.forEach(answer => {
 				if (answer.tutorId == interaction.user.id) {
-					announcementId = answer.announcementId;
-					answerValue = answer.selection;
+                    announcementId = Number(answer.announcementId);
+                    // Push all the ids of the dates selected in the answerIds array and converts the to numbers.
+                    answerIds = answer.IdsOfSelectedDates.split(",").map(Number);
+                    answerDates = answer.selectedDates;
 				}
 			});
 
-			// POST request to API is created with tutorId and selection under tutorDemand route with announcementId
+            console.log({"announcementId": announcementId, "answerIds": answerIds, "answerDates": answerDates});
 
-			updateMessage.courseRequestConfirmationMessage(interaction, answerValue);
+			// POST request to API is created with tutorId and selection under tutorDemand route with announcementId and date options IDs
+
+			updateMessage.courseRequestConfirmationMessage(interaction, answerDates);
 
 			// Delete the appropriate line in the CSV and write the new CSV state
 			fsCsv.writeFileSync("answers.csv", new Parser({
-				fields: ["announcementId", "tutorId", "selection"]
+				fields: ["announcementId", "tutorId", "IdsOfSelectedDates", "selectedDates"]
 			}).parse(deleteTutorAnswer(interaction.user.id, csvArray)));
-		} else {
+
+		} 
+        else {
 			updateMessage.noCourseDateSelectedMessage(interaction);
 		}
     },
@@ -206,7 +228,7 @@ module.exports = {
 			});
 
 			fsCsv.writeFileSync("answers.csv", new Parser({
-				fields: ["announcementId", "tutorId", "selection"]
+				fields: ["announcementId", "tutorId", "IdsOfSelectedDates", "selectedDates"]
 			}).parse(deleteTutorAnswer(interaction.user.id, csvArray)));
 
 			updateMessage.courseRequestCancellationMessage(interaction, answerValue);
@@ -220,7 +242,7 @@ module.exports = {
      */
     clearCSV()  {
         fsCsv.writeFileSync("answers.csv", new Parser({
-            fields: ["announcementId", "tutorId", "selection"]
+            fields: ["announcementId", "tutorId", "IdsOfSelectedDates", "selectedDates"]
         }).parse([]));
     },
 
