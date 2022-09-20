@@ -121,7 +121,7 @@ module.exports = {
 		const announcementId = interaction.values[0].split(",")[0];
 
 		// Checks if the tutor has already an answer stored inside the CVS
-		if (this.tutorMadeASelection(interaction.user.id, csvArray)) {
+		if (tutorMadeASelection(interaction.user.id, csvArray)) {
 			updateMessage.alreadySelectedCourseOptionsMessage(interaction);
 		} else {
 
@@ -156,7 +156,7 @@ module.exports = {
         // The answers of all tutors that are stored inside the CSV in the form of an array
 		const csvArray = await csv().fromFile("answers.csv");
         // If the tutor indeed made a selection, run this code.
-		if (this.tutorMadeASelection(interaction.user.id, csvArray)) {
+		if (tutorMadeASelection(interaction.user.id, csvArray)) {
 
 			// Stores the announcementId that is attached to the tutor that clicked the submit button.
 			let announcementId = undefined;
@@ -177,7 +177,7 @@ module.exports = {
 			// Delete the appropriate line in the CSV and write the new CSV state
 			fsCsv.writeFileSync("answers.csv", new Parser({
 				fields: ["announcementId", "tutorId", "selection"]
-			}).parse(this.deleteTutorAnswer(interaction.user.id, csvArray)));
+			}).parse(deleteTutorAnswer(interaction.user.id, csvArray)));
 		} else {
 			updateMessage.noCourseDateSelectedMessage(interaction);
 		}
@@ -191,7 +191,7 @@ module.exports = {
         // The answers of all tutors that are stored inside the CSV in the form of an array
 		const csvArray = await csv().fromFile("answers.csv");
         // If the tutor indeed made a selection, run this code.
-		if (this.tutorMadeASelection(interaction.user.id, csvArray)) {
+		if (tutorMadeASelection(interaction.user.id, csvArray)) {
 
 			// Stores the announcementId that is attached to the tutor that clicked the submit button.
 			let announcementId = undefined;
@@ -207,7 +207,7 @@ module.exports = {
 
 			fsCsv.writeFileSync("answers.csv", new Parser({
 				fields: ["announcementId", "tutorId", "selection"]
-			}).parse(this.deleteTutorAnswer(interaction.user.id, csvArray)));
+			}).parse(deleteTutorAnswer(interaction.user.id, csvArray)));
 
 			updateMessage.courseRequestCancellationMessage(interaction, answerValue);
 		} else {
