@@ -1,5 +1,8 @@
 /**
- * WHAT DOES THIS CLASS DO?
+ * This class is responsible for fetching and sending to the discord channel every new course requests.
+ * It is also responsible for retrieving and storing the answers to each client announcement and sending them to the API.
+ * 
+ * @version 20/09/2022 
  */
 
 // Require the necessary files
@@ -43,13 +46,13 @@ module.exports = {
     /**
      * Sends a message displaying a new client annoucement to discord.
      * User has the ability to select time slots via a select-menu.
-     * @param {object} channel 
-     * @param {Array} availabilities 
-     * @param {number} money 
-     * @param {String} subject 
-     * @param {String} level 
-     * @param {number} frequency
-     * @param {number} classDuration
+     * @param {object} channel The channel to which the method will send the course requests to.
+     * @param {Array} availabilities All the date options for a particular course request.
+     * @param {number} money The pay that the tutor will get for doing the class.
+     * @param {String} subject The subject of the class.
+     * @param {String} level The level of the class (A-Levels, GCSE ...)
+     * @param {number} frequency The number of times per week the class will hold
+     * @param {number} classDuration The duration of each session in hours.
      */
     sendNewClientMessage(channel, announcementId, availabilities, money, subject, level, frequency, classDuration) {
 
@@ -107,6 +110,10 @@ module.exports = {
         });
     },
 
+    /**
+     * Method that handles the selection of dates by the user.
+     * @param {Interaction} interaction The interaction object.
+     */
     async handleCourseDateSelection(interaction) {
         // The answers of all tutors that are stored inside the CSV in the form of an array
 		const csvArray = await csv().fromFile("answers.csv");
@@ -141,6 +148,10 @@ module.exports = {
 		}
     },
 
+    /**
+     * Method that handles the submission of a tutor's answer to a course request
+     * @param {Interaction} interaction 
+     */
     async handleCourseRequestSubmission(interaction) {
         // The answers of all tutors that are stored inside the CSV in the form of an array
 		const csvArray = await csv().fromFile("answers.csv");
@@ -172,6 +183,10 @@ module.exports = {
 		}
     },
 
+    /**
+     * Method that handles the cancellation of a tutor's answer to a course request
+     * @param {Interaction} interaction 
+     */
     async handleCourseRequestCancellation(interaction)   {
         // The answers of all tutors that are stored inside the CSV in the form of an array
 		const csvArray = await csv().fromFile("answers.csv");
@@ -201,60 +216,6 @@ module.exports = {
     },
 
     /**
-     * Searches through the csv file if there already is an answer for a particular tutor. 
-     * 
-     * @param {Number} tutorId The id of the tutor we're looking for.
-     * @param {Array} csvArray The array that contains all the tutors' answers.
-     * @returns true if the tutor has been found, false otherwise.
-     */
-    tutorMadeASelection(tutorId, csvArray) {
-
-        if (csvArray.length == 0) return false;
-
-        let isFound = false;
-
-        csvArray.forEach(answer => {
-            if (answer.tutorId == tutorId) {
-                isFound = true;
-            }
-        });
-
-        return isFound;
-    },
-
-    /**
-     * Delete the object of a particular tutor inside the csv array.
-     * 
-     * @param {number} tutorId The id of the tutor from whom we are going to delete the answer.
-     * @param {Array} csvArray The array that contains the element we want to delete. 
-     * @returns The updated version of the csv array.
-     */
-    deleteTutorAnswer(tutorId, csvArray) {
-
-        let answerToDelete = undefined;
-
-        // Find the object to delete and assign it to answerToDelete variable
-        csvArray.every(answer => {
-
-            if (answer.tutorId == tutorId) {
-                answerToDelete = answer;
-                return false;
-            }
-
-            return true;
-        });
-
-        // Get the index of the object to delete
-        const indexOfElementToDelete = csvArray.indexOf(answerToDelete); 
-        // only splice array when item is found
-        if (indexOfElementToDelete > -1) { 
-            csvArray.splice(indexOfElementToDelete, 1); // 2nd parameter means remove one item only
-        }
-
-        return csvArray;
-    },
-
-    /**
      * Delete every row in the "answers" CSV
      */
     clearCSV()  {
@@ -263,4 +224,58 @@ module.exports = {
         }).parse([]));
     },
 
+}
+
+/**
+     * Searches through the csv file if there already is an answer for a particular tutor. 
+     * 
+     * @param {Number} tutorId The id of the tutor we're looking for.
+     * @param {Array} csvArray The array that contains all the tutors' answers.
+     * @returns true if the tutor has been found, false otherwise.
+     */
+ tutorMadeASelection(tutorId, csvArray) {
+
+    if (csvArray.length == 0) return false;
+
+    let isFound = false;
+
+    csvArray.forEach(answer => {
+        if (answer.tutorId == tutorId) {
+            isFound = true;
+        }
+    });
+
+    return isFound;
+}
+
+/**
+ * Delete the object of a particular tutor inside the csv array.
+ * 
+ * @param {number} tutorId The id of the tutor from whom we are going to delete the answer.
+ * @param {Array} csvArray The array that contains the element we want to delete. 
+ * @returns The updated version of the csv array.
+ */
+deleteTutorAnswer(tutorId, csvArray) {
+
+    let answerToDelete = undefined;
+
+    // Find the object to delete and assign it to answerToDelete variable
+    csvArray.every(answer => {
+
+        if (answer.tutorId == tutorId) {
+            answerToDelete = answer;
+            return false;
+        }
+
+        return true;
+    });
+
+    // Get the index of the object to delete
+    const indexOfElementToDelete = csvArray.indexOf(answerToDelete); 
+    // only splice array when item is found
+    if (indexOfElementToDelete > -1) { 
+        csvArray.splice(indexOfElementToDelete, 1); // 2nd parameter means remove one item only
+    }
+
+    return csvArray;
 }

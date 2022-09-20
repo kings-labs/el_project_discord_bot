@@ -35,12 +35,12 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
 	console.log('Ready !');
-	// Reset the answers CSV
+	// Clear the CSV holding all the answers to the course requests
 	courseRequest.clearCSV();
-	// Get the channel to which it will send the annoucements
+	// Get the channel to which the bot will send the course requests to
 	const mainChannel = client.channels.cache.get(mainChannelId);
 	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
-	setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
+	// setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
 	courseRequest.sendNewClientMessage(mainChannel, 3, ["Friday 3PM", "Wednesday 3PM"], 23, "Math", "GSCE", 1, 2);
 	courseRequest.sendNewClientMessage(mainChannel, 2, ["Friday 3PM", "Wednesday 3PM", "Monday 3PM"], 23, "CS", "High", 2, 3);
 
@@ -90,9 +90,11 @@ client.on('interactionCreate', async interaction =>
 		else if (interaction.customId === 'startRescheduling')	{
 			reschedulingRequest.sendReschedulingMessage(interaction);
 		}
+		// Handle clicking the submit button to submit the dates choosen for a course request 
 		else if (interaction.customId === 'submitCourseRequest')	{
 			courseRequest.handleCourseRequestSubmission(interaction);
 		}
+		// Handle clicking the cancel button to cancel the dates choosen for a course request
 		else if (interaction.customId === 'cancelCourseRequest')	{
 			courseRequest.handleCourseRequestCancellation(interaction);
 		}
@@ -112,6 +114,7 @@ client.on('interactionCreate', async interaction =>
 		else if (interaction.customId === 'reschedulingClassSelected')	{
 			reschedulingRequest.showReschedulingForm(interaction);
 		}
+		// Handle selecting dates for a course request
 		else if (interaction.customId === 'courseDateSelected')	{
 			courseRequest.handleCourseDateSelection(interaction);
 		}

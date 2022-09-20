@@ -146,6 +146,12 @@ module.exports = {
 
     // --- COURSE REQUEST MESSAGES ---
 
+    /**
+     * Reply to the interaction's message to inform the user that they need to submit or cancel 
+     * their answer to a previous course request to proceed to another one.
+     * 
+     * @param {Interaction} interaction 
+     */
     async alreadySelectedCourseOptionsMessage(interaction)    {
         try {
             const alreadySelectedCourseOptionsMessage = 'You have registered answers to a previous announcement which you have not yet submitted or cancelled! \nPlease do so before attempting to register a new one for this announcement.';
@@ -156,6 +162,11 @@ module.exports = {
         }
     },
 
+    /**
+     * Reply to the interaction's message to inform the user that their answer is in a pending and needs to be submitted.
+     * 
+     * @param {Interaction} interaction 
+     */
     async waitingForCourseSubmissionMessage(interaction)    {
         try {
             const waitingForCourseSubmissionMessage = 'If you are done with your selection, please submit! \nYou can still change your selection.';
@@ -166,6 +177,11 @@ module.exports = {
         }
     },
 
+    /**
+     * Reply to the interaction's message to confirm to the user that their answer has been saved.
+     * 
+     * @param {Interaction} interaction 
+     */
     async courseRequestConfirmationMessage(interaction, answer)    {
         try {
             const courseRequestConfirmationMessage = `Your request for ${answer.replace(",", ", ")} has been sent.`;
@@ -176,6 +192,11 @@ module.exports = {
         }
     },
 
+    /**
+     * Reply to the interaction's message to confirm to the user that their answer has been canceled.
+     * 
+     * @param {Interaction} interaction 
+     */
     async courseRequestCancellationMessage(interaction, answer)    {
         try {
             const courseRequestCancellationMessage = `Your request for ${answer.replace(",", ", ")} has been cancelled.`;
@@ -186,6 +207,12 @@ module.exports = {
         }
     },
 
+    /**
+     * Reply to the interaction's message to inform the user that they haven't selected any answer. 
+     * It occurs whenever the user tries to submit their answer without acc having selected their date options.
+     * 
+     * @param {Interaction} interaction 
+     */
     async noCourseDateSelectedMessage(interaction)    {
         try {
             const noCourseDateSelectedMessage = 'Please (re)select your date options before submitting a request.';
@@ -196,6 +223,12 @@ module.exports = {
         }
     },
 
+    /**
+     * Reply to the interaction's message to inform the user that they don't have any pending request at the moment. 
+     * It occurs whenever the user tries to cancel their answer to a course request without acc having selected their date options.
+     * 
+     * @param {Interaction} interaction 
+     */
     async noCourseRequestActiveMessage(interaction)    {
         try {
             const noCourseRequestActiveMessage = 'You do not have any request in progress at the moment';
