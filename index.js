@@ -7,7 +7,7 @@
 
 // Require the necessary files
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const { token } = require('./config.json');
+const { token, mainChannelId} = require('./config.json');
 const feedbackRequest = require('./services/feedback-request');
 const cancellationRequest = require('./services/cancellation-request');
 const reschedulingRequest = require('./services/rescheduling-request');
@@ -35,8 +35,14 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
 	console.log('Ready !');
+	// Clear the CSV holding all the answers to the course requests
+	courseRequest.clearCSV();
+	// Get the channel to which the bot will send the course requests to
+	const mainChannel = client.channels.cache.get(mainChannelId);
+	// Executes the function getCourseRequests at the start of the application.
+	courseRequest.getCourseRequests(mainChannel);
 	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
-	setInterval(() => courseRequest.getCourseRequests(), 3600000);
+	setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
 });
 
 
@@ -83,6 +89,14 @@ client.on('interactionCreate', async interaction =>
 		else if (interaction.customId === 'startRescheduling')	{
 			reschedulingRequest.sendReschedulingMessage(interaction);
 		}
+		// Handle clicking the submit button to submit the dates choosen for a course request 
+		else if (interaction.customId === 'submitCourseRequest')	{
+			courseRequest.handleCourseRequestSubmission(interaction);
+		}
+		// Handle clicking the cancel button to cancel the dates choosen for a course request
+		else if (interaction.customId === 'cancelCourseRequest')	{
+			courseRequest.handleCourseRequestCancellation(interaction);
+		}
 	}
 
 	// Handle select-menu interactions
@@ -98,6 +112,10 @@ client.on('interactionCreate', async interaction =>
 		// Handle choosing the class for requesting a class rescheduling
 		else if (interaction.customId === 'reschedulingClassSelected')	{
 			reschedulingRequest.showReschedulingForm(interaction);
+		}
+		// Handle selecting dates for a course request
+		else if (interaction.customId === 'courseDateSelected')	{
+			courseRequest.handleCourseDateSelection(interaction);
 		}
 	}
 
