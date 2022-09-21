@@ -184,7 +184,7 @@ module.exports = {
      */
     async courseRequestConfirmationMessage(interaction, answer)    {
         try {
-            const courseRequestConfirmationMessage = `Your request for **${answer.replace(",", ", ")}** has been sent.`;
+            const courseRequestConfirmationMessage = `Your request for **${answer.replace(",", ", ")}** has been sent.\nYou will recieve an email about the status of your request when it is completed.`;
             await interaction.reply({ content: courseRequestConfirmationMessage , ephemeral: true });
         } catch (error) {
             console.error(error);
