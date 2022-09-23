@@ -115,9 +115,8 @@ module.exports = {
 				}
 			});
 
-			// TO-DO: POST request to API is created with tutorId and selection under tutorDemand route with announcementId and date options IDs
-
-			updateMessage.courseRequestConfirmationMessage(interaction, answerDates);
+			// POST request to API is created under tutorDemand route with tutorId, announcementId and date options IDs
+            postTutorDemand(interaction.user.id, announcementId, answerIds);
 
 			// Delete the appropriate line in the CSV and write the new CSV state
 			fsCsv.writeFileSync("answers.csv", new Parser({
@@ -299,4 +298,29 @@ function deleteTutorAnswer(tutorId, csvArray) {
     }
 
     return csvArray;
+}
+
+function postTutorDemand(discordID, courseRequestID, dateSelected) {
+
+    const url = `${apiUrlPrefix}/tutor_demand`;
+
+    // An HTTP POST request
+    fetch(url, params)
+		.then(res => {
+		    // Update the message if there isn't any error
+			if (res.status === 200)	{
+				updateMessage.courseRequestConfirmationMessage(interaction);
+			}
+		})
+		// Handle server errors
+		.catch(async error => {
+			console.error(error);
+			try {
+				updateMessage.serverErrorMessage(interaction);
+			} catch (interactionRepliedError) {
+				console.error(interactionRepliedError);
+			}
+		});
+
+    
 }
