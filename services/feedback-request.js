@@ -8,7 +8,7 @@
 const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { feedbackChannelId, apiUrlPrefix } = require('../config.json');
 const updateMessage = require('./message-update');  // Contains useful methods to update the messages shown to users
-const jwtVerify = require('./jwt-verification');
+const jwtVerify = require('./jwt-verification'); // Used to update the JWT
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 
 module.exports = {
@@ -22,17 +22,42 @@ module.exports = {
 	 */
 	async sendFeedbackMessage(interaction) 
 	{
+		const { jwt } = require('../config.json');	// The JWT for making secure API calls
+		console.log("\nToken: ", jwt);
+
 		// url of the API call to get this tutor's classes
 		const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
 
-		// TESTINGGGGG
-		jwtVerify.jwtSignin();
+		// The parameters of the HTTP request
+		const params = {
+        	headers : {'Authorization': `token: ${jwt}`}
+        };
 
 		// An HTTP GET request
-        fetch(url)
-		.then(data=> {return data.json()})	// format the response
-		.then(async classes => 
-		{
+        fetch(url, params)
+		// format the response
+		.then(async data => {
+			if (401 === data.status)	{
+				console.log("Invalid JWT");
+				await jwtVerify.jwtSignin()
+				// this.sendFeedbackMessage(interaction);
+			} else if (200 === data.status)	{
+				const classes = await data.json();
+				createSelectMenuOptions(classes);
+			}
+		})	
+		// Handle server errors
+		.catch(error => {
+			console.error(error);
+			updateMessage.serverErrorMessage(interaction);
+		});
+
+		/**
+		 * 
+		 * @param {*} classes 
+		 * @returns 
+		 */
+		async function createSelectMenuOptions(classes)	{
 			// Check if the tutor has any active classes
             if (0 === classes.length)   {
                 updateMessage.noAvailableClassesMessage(interaction);
@@ -75,12 +100,7 @@ module.exports = {
 				console.error(error);
 				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 			}
-		})
-		// Handle server errors
-		.catch(error => {
-			console.error(error);
-			updateMessage.serverErrorMessage(interaction);
-		});
+		};
     },
 
     /**
