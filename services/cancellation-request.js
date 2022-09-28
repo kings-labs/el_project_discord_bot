@@ -8,6 +8,7 @@
 const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { cancellationChannelId, apiUrlPrefix } = require('../config.json');
 const updateMessage = require('./message-update');  // Contains useful methods to update the messages shown to users
+const jwtVerify = require('./jwt-verification'); // Used to update the JWT
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 
 module.exports = {
@@ -21,16 +22,46 @@ module.exports = {
 	 */
 	async sendCancellationMessage(interaction) 
 	{
+		const { jwt } = require('../config.json');	// The JWT for making secure API calls
+
+		// The parameters of the HTTP request
+		const params = {
+        	headers : {'Authorization': `token: ${jwt}`}
+        };
+
 		// url of the API call to get this tutor's classes
-		const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
+		// const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
+		const url = `${apiUrlPrefix}/tutor_classes/discordALİ`;
 
 		// An HTTP GET request
-        fetch(url)
-		.then(data=> {return data.json()})	// format the response
-		.then(async classes => 
-		{
-            // Check if the tutor has any active classes
-            if (0 === classes.length)   {
+        fetch(url, params)
+		.then(async res => {
+			// if the jwt is invalid, get a new one and call this method again
+			if (401 === res.status)	{
+				await jwtVerify.jwtSignin();
+				this.sendCancellationMessage(interaction);
+			// get the classes array and create the select menu with them
+			} else if (200 === res.status)	{
+				const classes = await res.json();
+				createSelectMenuOptions(classes);
+			}
+		})
+		// Handle server errors
+		.catch(error => {
+			console.error(error);
+            updateMessage.serverErrorMessage(interaction);
+		});
+
+
+		/**
+		 * Create the message that holds the select menu which tutors use
+		 * to submit a class cancellation request.
+		 * 
+		 * @param {Array} classes The active classes for the tutor
+		 */
+		async function createSelectMenuOptions(classes)	{
+			// Check if the tutor has any active classes
+			 if (0 === classes.length)   {
                 updateMessage.noAvailableClassesMessage(interaction);
                 return;
             }
@@ -71,12 +102,7 @@ module.exports = {
 				console.error(error);
 				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 			}
-		})
-		// Handle server errors
-		.catch(error => {
-			console.error(error);
-            updateMessage.serverErrorMessage(interaction);
-		});
+		};
     },
 
     /**
@@ -149,11 +175,16 @@ module.exports = {
             reason: cancellationReason
         };
 
+		const { jwt } = require('../config.json');	// The JWT for making secure API calls
+
 		// The parameters of the HTTP POST request
 		const params = {
 			method: "POST",
 			body: JSON.stringify(requestData),
-        	headers : {'Content-Type': 'application/json'}
+        	headers : {
+				'Content-Type': 'application/json',
+				'Authorization': `token: ${jwt}`
+			}
         };
 
 		// The API URL for submitting a class cancellation request
@@ -161,10 +192,15 @@ module.exports = {
 
 		// An HTTP POST request
         fetch(url, params)
-		.then(res => {
+		.then(async res => {
 		    // Update the message if there isn't any error
 			if (200 === res.status)	{
 				updateMessage.confirmationMessage(interaction);
+			}
+			// if the jwt is invalid, get a new one and call this method again
+			else if (401 === res.status)	{
+				await jwtVerify.jwtSignin();
+				this.cancellationFormSubmission(interaction);
 			}
             // Update the message if the user entered an invalid class ID
             else if (412 === res.status)    {
