@@ -328,6 +328,8 @@ function deleteTutorAnswer(tutorId, csvArray) {
  */
 function postTutorDemand(interaction, answers, discordId, courseRequestId, datesSelected) {
 
+    const { jwt } = require('../config.json');	// The JWT for making secure API calls
+
     const url = `${apiUrlPrefix}/tutor_demand`;
 
     const requestData = {
@@ -339,16 +341,24 @@ function postTutorDemand(interaction, answers, discordId, courseRequestId, dates
     // The parameters of the HTTP POST request
     const params = {
         method: "POST",
-        headers : {'Content-Type': 'application/json'},
+        headers : {
+            'Content-Type': 'application/json',
+            'Authorization': `token: ${jwt}`
+        },
         body: JSON.stringify(requestData)
     };
 
     // An HTTP POST request
     fetch(url, params)
-		.then(res => {
+		.then(async res => {
 		    // Update the message if there isn't any error
 			if (res.status === 200)	{
 				updateMessage.courseRequestConfirmationMessage(interaction, answers);
+			}
+            // if the jwt is invalid, get a new one and call this method again
+			else if (401 === res.status)	{
+				await jwtVerify.jwtSignin();
+				postTutorDemand(interaction, answers, discordId, courseRequestId, datesSelected);
 			}
 		})
 		// Handle server errors
