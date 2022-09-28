@@ -2,13 +2,14 @@
  * This class is responsible for fetching and sending to the discord channel every new course requests.
  * It is also responsible for retrieving and storing the answers to each client announcement and sending them to the API.
  * 
- * @version 20/09/2022 
+ * @version 28/09/2022 
  */
 
 // Require the necessary files
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, IntegrationExpireBehavior } = require('discord.js');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 const updateMessage = require('./message-update'); // Contains useful methods to update the messages shown to users
+const jwtVerify = require('./jwt-verification'); // Used to update the JWT
 // Import dependecies to work with CSV
 const fsCsv = require("fs");
 const csv = require("csvtojson"); // To read the csv file 
@@ -21,21 +22,34 @@ module.exports = {
      * Fetches all new course requests by making a GET HTTP request to the API.
      * For each new course requests, sends a new client announcement to the discord channel.
      * 
-     * @param {object} channel 
+     * @param {object} channel the channel to which the message will be sent
      */
     getCourseRequests(channel) {
+        const { jwt } = require('../config.json');	// The JWT for making secure API calls
+
+		// The parameters of the HTTP request
+		const params = {
+        	headers : {'Authorization': `token: ${jwt}`}
+        };
+
         const url = `${apiUrlPrefix}/new_course_requests`;
 
         // GET HTTP request
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
+        fetch(url, params)
+            .then(async res => {
+                // if the jwt is invalid, get a new one and call this method again
+                if (401 === res.status)	{
+                    await jwtVerify.jwtSignin();
+                    this.getCourseRequests(channel);
+                // get the classes array and create the select menu with them
+                } else if (200 === res.status)	{
+                    const data = await res.json();
+                    let arrayOfCourseRequests = data.result;
 
-                let arrayOfCourseRequests = data.result;
-
-                arrayOfCourseRequests.forEach(courseRequest => {
-                    sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.DateOptions);
-                });
+                    arrayOfCourseRequests.forEach(courseRequest => {
+                        sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.DateOptions);
+                    });
+                }
             })
             // Handle server errors
             .catch(error => {

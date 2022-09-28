@@ -30,9 +30,7 @@ module.exports = {
         };
 
 		// url of the API call to get this tutor's classes
-		// const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
-		const url = `${apiUrlPrefix}/tutor_classes/discordALİ`;
-
+		const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
 
 		// An HTTP GET request
         fetch(url, params)
@@ -40,7 +38,6 @@ module.exports = {
 			// if the jwt is invalid, get a new one and call this method again
 			if (401 === res.status)	{
 				await jwtVerify.jwtSignin();
-				// interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 				this.sendFeedbackMessage(interaction);
 			// get the classes array and create the select menu with them
 			} else if (200 === res.status)	{

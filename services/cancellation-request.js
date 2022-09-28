@@ -30,8 +30,7 @@ module.exports = {
         };
 
 		// url of the API call to get this tutor's classes
-		// const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
-		const url = `${apiUrlPrefix}/tutor_classes/discordALİ`;
+		const url = `${apiUrlPrefix}/tutor_classes/${interaction.user.id}`;
 
 		// An HTTP GET request
         fetch(url, params)
