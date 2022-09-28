@@ -46,11 +46,11 @@ module.exports = {
                     const data = await res.json();
                     let arrayOfCourseRequests = data.result;
 
-                    arrayOfCourseRequests.forEach(courseRequest => {
-                        sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.DateOptions);
-                    });
-                }
-            })
+
+                arrayOfCourseRequests.forEach(courseRequest => {
+                    sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.dateOptions);
+                });
+            }})
             // Handle server errors
             .catch(error => {
                 console.error(error);
@@ -62,6 +62,7 @@ module.exports = {
      * @param {Interaction} interaction The interaction object.
      */
     async handleCourseDateSelection(interaction) {
+
         // The answers of all tutors that are stored inside the CSV in the form of an array
 		const csvArray = await csv().fromFile("answers.csv");
 		// Extract from the answer the announcement id
@@ -129,9 +130,8 @@ module.exports = {
 				}
 			});
 
-			// TO-DO: POST request to API is created with tutorId and selection under tutorDemand route with announcementId and date options IDs
-
-			updateMessage.courseRequestConfirmationMessage(interaction, answerDates);
+			// POST request to API is created under tutorDemand route with tutorId, announcementId and date options IDs
+            postTutorDemand(interaction, answerDates, interaction.user.id, announcementId, answerIds);
 
 			// Delete the appropriate line in the CSV and write the new CSV state
 			fsCsv.writeFileSync("answers.csv", new Parser({
@@ -313,4 +313,51 @@ function deleteTutorAnswer(tutorId, csvArray) {
     }
 
     return csvArray;
+}
+
+
+/**
+ * Post the tutor demand to the server via an HTTP Post Request.
+ * 
+ * 
+ * @param {*} interaction The interaction currently active
+ * @param {*} answers The answer of the tutor in the form of a string of dates
+ * @param {*} discordId The discordID of the tutor
+ * @param {*} courseRequestId The ID of the course request concerned
+ * @param {*} datesSelected A list holding the IDs of the dates selected
+ */
+function postTutorDemand(interaction, answers, discordId, courseRequestId, datesSelected) {
+
+    const url = `${apiUrlPrefix}/tutor_demand`;
+
+    const requestData = {
+        discordID: discordId,
+        courseRequestID: courseRequestId,
+        dateOptions: datesSelected
+    }
+
+    // The parameters of the HTTP POST request
+    const params = {
+        method: "POST",
+        headers : {'Content-Type': 'application/json'},
+        body: JSON.stringify(requestData)
+    };
+
+    // An HTTP POST request
+    fetch(url, params)
+		.then(res => {
+		    // Update the message if there isn't any error
+			if (res.status === 200)	{
+				updateMessage.courseRequestConfirmationMessage(interaction, answers);
+			}
+		})
+		// Handle server errors
+		.catch(async error => {
+			console.error(error);
+			try {
+				updateMessage.serverErrorMessage(interaction);
+			} catch (interactionRepliedError) {
+				console.error(interactionRepliedError);
+			}
+		});
 }
