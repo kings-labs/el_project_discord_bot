@@ -239,4 +239,20 @@ module.exports = {
         }
     },
 
+    /**
+     * Reply to the interaction's message to inform the tutor that the course
+     * has been assigned to another tutor.
+     * 
+     * @param {Interaction} interaction 
+     */
+     async courseRequestTaken(interaction)    {
+        try {
+            const courseRequestTaken = 'Sorry, this course has already been asigned a tutor!';
+            await interaction.reply({ content: courseRequestTaken , ephemeral: true });
+        } catch (error) {
+            console.error(error);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    },
+
 }

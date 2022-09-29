@@ -360,6 +360,10 @@ function postTutorDemand(interaction, answers, discordId, courseRequestId, dates
 				await jwtVerify.jwtSignin();
 				postTutorDemand(interaction, answers, discordId, courseRequestId, datesSelected);
 			}
+            // if the course request has been approved to another tutor
+			else if (410 === res.status)	{
+				updateMessage.courseRequestTaken(interaction);
+			}
 		})
 		// Handle server errors
 		.catch(async error => {
