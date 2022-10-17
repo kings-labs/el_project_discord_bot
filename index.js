@@ -12,6 +12,7 @@ const feedbackRequest = require('./services/feedback-request');
 const cancellationRequest = require('./services/cancellation-request');
 const reschedulingRequest = require('./services/rescheduling-request');
 const courseRequest = require('./services/course-requests');
+const privateMessage = require('./services/private-message');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -43,6 +44,7 @@ client.once('ready', async () => {
 	courseRequest.getCourseRequests(mainChannel);
 	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
 	setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
+	setInterval(() => privateMessage.sendPrivateMessage(), 3600000);
 });
 
 

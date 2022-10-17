@@ -6,7 +6,7 @@
  */
 
 // Require the necessary files
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, IntegrationExpireBehavior } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder } = require('discord.js');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 const updateMessage = require('./message-update'); // Contains useful methods to update the messages shown to users
 const jwtVerify = require('./jwt-verification'); // Used to update the JWT
@@ -45,7 +45,6 @@ module.exports = {
                 } else if (200 === res.status)	{
                     const data = await res.json();
                     let arrayOfCourseRequests = data.result;
-
 
                 arrayOfCourseRequests.forEach(courseRequest => {
                     sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.dateOptions);
