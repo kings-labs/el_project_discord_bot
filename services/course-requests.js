@@ -46,10 +46,11 @@ module.exports = {
                     const data = await res.json();
                     let arrayOfCourseRequests = data.result;
 
-                arrayOfCourseRequests.forEach(courseRequest => {
-                    sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.dateOptions);
-                });
-            }})
+                    arrayOfCourseRequests.forEach(courseRequest => {
+                        sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.dateOptions);
+                    });
+                }
+            })
             // Handle server errors
             .catch(error => {
                 console.error(error);
