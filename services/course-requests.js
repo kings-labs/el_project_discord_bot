@@ -10,7 +10,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBu
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 const updateMessage = require('./message-update'); // Contains useful methods to update the messages shown to users
 const jwtVerify = require('./jwt-verification'); // Used to update the JWT
-// Import dependecies to work with CSV
+// Import dependencies to work with CSV
 const fsCsv = require("fs");
 const csv = require("csvtojson"); // To read the csv file 
 const { Parser } = require("json2csv");

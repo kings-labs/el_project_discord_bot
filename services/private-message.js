@@ -8,6 +8,7 @@ const {
     apiUrlPrefix
 } = require('../config.json');
 const { EmbedBuilder } = require('discord.js');
+const jwtVerify = require('./jwt-verification'); // Used to update the JWT
 
 module.exports = {
 
