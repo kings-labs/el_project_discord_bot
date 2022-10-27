@@ -44,6 +44,8 @@ client.once('ready', async () => {
 	courseRequest.getCourseRequests(mainChannel);
 	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
 	setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
+ 	privateMessage.getPrivateMessages(client);
+	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
 	setInterval(() => privateMessage.getPrivateMessages(client), 3600000);
 });
 

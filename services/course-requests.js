@@ -45,7 +45,6 @@ module.exports = {
                 } else if (200 === res.status)	{
                     const data = await res.json();
                     let arrayOfCourseRequests = data.result;
-
                     arrayOfCourseRequests.forEach(courseRequest => {
                         sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.dateOptions);
                     });

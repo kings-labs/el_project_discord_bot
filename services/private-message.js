@@ -13,6 +13,14 @@ const jwtVerify = require('./jwt-verification'); // Used to update the JWT
 module.exports = {
 
     getPrivateMessages(client) {
+  
+        const { jwt } = require('../config.json');	// The JWT for making secure API calls
+
+		// The parameters of the HTTP request
+		const params = {
+        	headers : {'Authorization': `token: ${jwt}`}
+        };
+
         const url = `${apiUrlPrefix}/private_messages`;
 
         fetch(url, params)
@@ -24,7 +32,7 @@ module.exports = {
                     // get the classes array and create the select menu with them
                 } else if (200 === res.status) {
                     const data = await res.json();
-                    let arrayOfPrivateMessages = data.result;
+                    let arrayOfPrivateMessages = data.messages;
                     arrayOfPrivateMessages.forEach(element => {
                         sendPrivateMessage(client, element.discordID, element.message);
                     });
@@ -44,6 +52,7 @@ module.exports = {
  * @param {*} messageContent 
  */
 async function sendPrivateMessage (client, discordID, messageContent){
+
     // Create the frame of the message
     const msgEmbed = new EmbedBuilder()
         .setColor(0x7289DA)
