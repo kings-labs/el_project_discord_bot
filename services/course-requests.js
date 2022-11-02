@@ -9,7 +9,7 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder } = require('discord.js');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 const updateMessage = require('./message-update'); // Contains useful methods to update the messages shown to users
-const jwtVerify = require('./jwt-verification'); // Used to update the JWT
+const jwtVerify = require('../../el_project_api/jwt-verification'); // Used to update the JWT
 // Import dependencies to work with CSV
 const fsCsv = require("fs");
 const csv = require("csvtojson"); // To read the csv file 

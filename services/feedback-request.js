@@ -8,7 +8,7 @@
 const { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { feedbackChannelId, apiUrlPrefix } = require('../config.json');
 const updateMessage = require('./message-update');  // Contains useful methods to update the messages shown to users
-const jwtVerify = require('./jwt-verification'); // Used to update the JWT
+const jwtVerify = require('../../el_project_api/jwt-verification'); // Used to update the JWT
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 
 module.exports = {
