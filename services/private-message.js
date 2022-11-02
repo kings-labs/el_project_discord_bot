@@ -1,6 +1,6 @@
 const fetch = (...args) => import('node-fetch').then(({
     default: fetch
-}) => fetch(...args)); // node-fetch import
+}) => fetch(...args)); // node-fetch import, it's basically a way of loading (instantiating) node-fetch
 const {
     DMChannel
 } = require('discord.js');
@@ -60,7 +60,7 @@ async function sendPrivateMessage (client, discordID, messageContent){
         .setDescription(messageContent)
         .setTimestamp()
         .setFooter({
-            text: 'If you have any issue with this update please contact Nish.',
+            text: 'If you have any issue with this update please contact admin.',
             iconURL: 'https://i.imgur.com/i1k870R.png'
     });
 

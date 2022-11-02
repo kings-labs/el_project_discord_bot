@@ -42,11 +42,11 @@ client.once('ready', async () => {
 	const mainChannel = client.channels.cache.get(mainChannelId);
 	// Executes the function getCourseRequests at the start of the application.
 	courseRequest.getCourseRequests(mainChannel);
-	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
-	setInterval(() => courseRequest.getCourseRequests(mainChannel), 3600000);
+	// Executes the function getCourseRequests every 1 minute (=60,000 millisecs).
+	setInterval(() => courseRequest.getCourseRequests(mainChannel), 60000);
  	privateMessage.getPrivateMessages(client);
-	// Executes the function getCourseRequests every 1 hour (=3,600,000 millisecs).
-	setInterval(() => privateMessage.getPrivateMessages(client), 3600000);
+	// Executes the function getCourseRequests every 1 minute (=60,000 millisecs).
+	setInterval(() => privateMessage.getPrivateMessages(client), 60000);
 });
 
 

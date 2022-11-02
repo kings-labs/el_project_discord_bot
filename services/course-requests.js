@@ -67,7 +67,7 @@ module.exports = {
 		// Extract from the answer the announcement id
 		const announcementId = interaction.values[0].split(",")[0];
 
-		// Checks if the tutor has already an answer stored inside the CVS
+		// Checks if the tutor has already an answer stored inside the CSV
 		if (tutorMadeASelection(interaction.user.id, csvArray)) {
 			updateMessage.alreadySelectedCourseOptionsMessage(interaction);
 		} else {
