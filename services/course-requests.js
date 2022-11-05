@@ -6,11 +6,11 @@
  */
 
 // Require the necessary files
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, IntegrationExpireBehavior } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder } = require('discord.js');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));	// node-fetch import
 const updateMessage = require('./message-update'); // Contains useful methods to update the messages shown to users
-const jwtVerify = require('./jwt-verification'); // Used to update the JWT
-// Import dependecies to work with CSV
+const jwtVerify = require('../../el_project_api/jwt-verification'); // Used to update the JWT
+// Import dependencies to work with CSV
 const fsCsv = require("fs");
 const csv = require("csvtojson"); // To read the csv file 
 const { Parser } = require("json2csv");
@@ -45,12 +45,11 @@ module.exports = {
                 } else if (200 === res.status)	{
                     const data = await res.json();
                     let arrayOfCourseRequests = data.result;
-
-
-                arrayOfCourseRequests.forEach(courseRequest => {
-                    sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.dateOptions);
-                });
-            }})
+                    arrayOfCourseRequests.forEach(courseRequest => {
+                        sendNewClientAnnouncement(channel, courseRequest.ID, courseRequest.Subject, courseRequest.Frequency, courseRequest.LevelName, courseRequest.Money, courseRequest.Duration, courseRequest.dateOptions);
+                    });
+                }
+            })
             // Handle server errors
             .catch(error => {
                 console.error(error);
@@ -68,7 +67,7 @@ module.exports = {
 		// Extract from the answer the announcement id
 		const announcementId = interaction.values[0].split(",")[0];
 
-		// Checks if the tutor has already an answer stored inside the CVS
+		// Checks if the tutor has already an answer stored inside the CSV
 		if (tutorMadeASelection(interaction.user.id, csvArray)) {
 			updateMessage.alreadySelectedCourseOptionsMessage(interaction);
 		} else {
